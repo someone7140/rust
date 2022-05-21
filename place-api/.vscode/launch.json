@@ -12,7 +12,7 @@
                 "args": [
                     "build",
                     "--bin=place-api",
-                    "--package=place-api"
+                    "--package=place-api",
                 ],
                 "filter": {
                     "name": "place-api",
@@ -20,7 +20,10 @@
                 }
             },
             "args": [],
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "ENVIRONMENT": "local"
+            }
         },
         {
             "type": "lldb",

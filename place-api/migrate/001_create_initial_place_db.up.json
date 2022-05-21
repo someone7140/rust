@@ -1,0 +1,55 @@
+[
+  {
+    "createIndexes": "location",
+    "indexes": [
+      {
+        "key": {
+          "sort_order": 1
+        },
+        "name": "sort_order_index",
+        "background": true
+      },
+      {
+        "key": {
+          "loc": "2dsphere"
+        },
+        "name": "loc_index",
+        "background": true
+      }
+    ]
+  },
+  {
+    "createIndexes": "store_type",
+    "indexes": [
+      {
+        "key": {
+          "sort_order": 1
+        },
+        "name": "sort_order_index",
+        "background": true
+      }
+    ]
+  },
+  {
+    "insert": "location",
+    "documents": [
+      {
+        "_id": "ikebukuro_tokyo",
+        "name": "池袋（東京）",
+        "loc": [139.7103922, 35.7294481],
+        "sort_order": 1000,
+        "update_time": 1
+      }
+    ]
+  },
+  {
+    "insert": "store_type",
+    "documents": [
+      {
+        "_id": "bar",
+        "name": "バー",
+        "sort_order": 1000
+      }
+    ]
+  }
+]
