@@ -1,0 +1,40 @@
+[
+  {
+    "createIndexes": "event_update_history",
+    "indexes": [
+      {
+        "key": {
+          "location_key": 1
+        },
+        "name": "location_key_index",
+        "background": true
+      },
+      {
+        "key": {
+          "event_date": 1
+        },
+        "name": "event_date_index",
+        "background": true
+      },
+      {
+        "key": {
+          "update_time": 1
+        },
+        "name": "update_time_index",
+        "background": true
+      }
+    ]
+  },
+  {
+    "insert": "event_search_master",
+    "documents": [
+      {
+        "_id": "tokyo",
+        "tunagate_key": "tokyo",
+        "jmty_key": "tokyo",
+        "koryupa_key": "13",
+        "kokuchpro_key": "area-東京都"
+      }
+    ]
+  }
+]
