@@ -1,5 +1,45 @@
 [
   {
+    "createIndexes": "event",
+    "indexes": [
+      {
+        "key": {
+          "site_key": 1
+        },
+        "name": "site_key_index",
+        "background": true
+      },
+      {
+        "key": {
+          "site_event_id": 1
+        },
+        "name": "site_event_id_index",
+        "background": true
+      },
+      {
+        "key": {
+          "location_key": 1
+        },
+        "name": "location_key_index",
+        "background": true
+      },
+      {
+        "key": {
+          "event_date": 1
+        },
+        "name": "event_date_index",
+        "background": true
+      },
+      {
+        "key": {
+          "update_time": 1
+        },
+        "name": "update_time_index",
+        "background": true
+      }
+    ]
+  },
+  {
     "createIndexes": "event_update_history",
     "indexes": [
       {

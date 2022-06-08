@@ -1,11 +1,11 @@
-use crate::model::db::event_info_collection::{
-    EventUpdateHistoryCollection, EventUpdateHistoryTrait,
-};
+use crate::gather::gather_event_data;
+use crate::model::db::event_info_collection::EventUpdateHistoryCollection;
+use crate::repository::event_repository;
 use crate::repository::event_search_info_repository;
 use crate::util::date_util;
 use std::error::Error;
 
-pub fn update_event_execute() -> Result<(), Box<dyn Error>> {
+pub async fn update_event_execute() -> Result<(), Box<dyn Error>> {
     // DBから更新の管理情報を取得
     let event_search_master_col = event_search_info_repository::get_event_search_master()?;
     let event_update_history_col = event_search_info_repository::get_event_update_history()?;
@@ -14,7 +14,8 @@ pub fn update_event_execute() -> Result<(), Box<dyn Error>> {
     let now_date_time = now_date.timestamp();
 
     for event_search_master in event_search_master_col.into_iter() {
-        let location_key = event_search_master._id;
+        let event_search_master_ref = &event_search_master;
+        let location_key = event_search_master_ref.clone()._id;
         // 該当の地域キーで更新履歴を絞り込み
         let event_updates = event_update_history_col
             .iter()
@@ -42,10 +43,26 @@ pub fn update_event_execute() -> Result<(), Box<dyn Error>> {
                 break;
             } else {
                 // サイトからデータ収集
+                let gather_events = gather_event_data::get_event_data(
+                    event_search_master_ref.clone(),
+                    val.event_date.clone(),
+                    now_date_time.clone(),
+                )
+                .await?;
                 // event_update_historyに登録
+                event_repository::add_events(gather_events)?;
                 // event_update_historyのupdate_timeを現時刻で更新
-                // 前に更新したデータを削除
-                println!("{0}", val.event_date.clone());
+                event_search_info_repository::update_time_event_update_history(
+                    location_key.clone(),
+                    val.event_date.clone(),
+                    now_date_time.clone(),
+                )?;
+                // 前に追加したeventデータを削除
+                event_repository::delete_events(
+                    location_key.clone(),
+                    val.event_date.clone(),
+                    val.update_time.clone(),
+                )?;
             }
         }
         // 削除対象

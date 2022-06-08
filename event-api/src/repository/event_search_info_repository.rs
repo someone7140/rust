@@ -52,6 +52,25 @@ pub fn set_init_event_update_history(
     return Ok(return_docs);
 }
 
+pub fn update_time_event_update_history(
+    location_key: String,
+    event_date: String,
+    update_time: i64,
+) -> Result<(), Box<dyn Error>> {
+    let col = mongodb_client::get_mongodb_db_connection()?
+        .collection::<EventUpdateHistoryCollection>("event_update_history");
+    col.update_one(
+        doc! {
+            "location_key": location_key, "event_date": event_date
+        },
+        doc! {
+            "$set": { "update_time": update_time }
+        },
+        None,
+    )?;
+    return Ok(());
+}
+
 pub fn delete_event_update_history(
     location_key: String,
     event_dates: Vec<String>,
@@ -64,6 +83,6 @@ pub fn delete_event_update_history(
             { "event_date": { "$in": event_dates } }
         ]
     };
-    let _ = col.delete_many(delete_target_query, None)?;
+    col.delete_many(delete_target_query, None)?;
     return Ok(());
 }

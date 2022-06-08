@@ -3,7 +3,7 @@ use actix_web::{error::ErrorInternalServerError, post, HttpResponse, Responder};
 
 #[post("/update_event_info")]
 pub async fn update_event_info() -> impl Responder {
-    let response = update_event_execute();
+    let response = update_event_execute().await;
 
     return match response {
         Ok(_r) => HttpResponse::Ok().json(""),

@@ -15,11 +15,13 @@ mod gather {
 
 mod model {
     pub mod db {
+        pub mod event_collection;
         pub mod event_info_collection;
     }
 }
 
 mod repository {
+    pub mod event_repository;
     pub mod event_search_info_repository;
     pub mod mongodb_client;
 }
