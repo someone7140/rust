@@ -30,6 +30,6 @@ pub fn parse_str_jst_date(jst_str_date: String) -> Result<DateTime<Tz>, Box<dyn 
 }
 
 // 日付を文字列にフォーマット
-pub fn format_jst_date(jst_date_time: DateTime<Tz>) -> String {
-    return jst_date_time.format("%Y-%m-%d").to_string();
+pub fn format_jst_date(jst_date_time: DateTime<Tz>, format_str: &str) -> String {
+    return jst_date_time.format(format_str).to_string();
 }

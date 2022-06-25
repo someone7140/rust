@@ -38,4 +38,5 @@ pub struct EventSearchMasterCollection {
     pub jmty_key: String,
     pub koryupa_key: String,
     pub kokuchpro_key: String,
+    pub twipla_key: String,
 }

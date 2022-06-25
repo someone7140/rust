@@ -39,7 +39,7 @@ pub fn set_init_event_update_history(
             let insert_date = target_date + Duration::days(d.into());
             return EventUpdateHistoryCollection {
                 location_key: location_key.clone(),
-                event_date: date_util::format_jst_date(insert_date),
+                event_date: date_util::format_jst_date(insert_date, "%Y-%m-%d"),
                 update_time: 1.into(),
             };
         })

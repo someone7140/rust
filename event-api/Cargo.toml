@@ -16,6 +16,7 @@ reqwest = "0.11.10"
 scraper = "0.13.0"
 chrono = "0.4"
 chrono-tz = "0.6"
+percent-encoding = "2.1.0"
 
 [dependencies.mongodb]
 version = "2.2.1"
