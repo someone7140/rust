@@ -6,6 +6,7 @@ use dotenv;
 use std::env;
 
 mod controller {
+    pub mod get_event_info_controller;
     pub mod update_event_info_controller;
 }
 
@@ -18,6 +19,9 @@ mod model {
         pub mod event_collection;
         pub mod event_info_collection;
     }
+    pub mod api {
+        pub mod event_info_master_response;
+    }
 }
 
 mod repository {
@@ -27,6 +31,7 @@ mod repository {
 }
 
 mod service {
+    pub mod get_event_service;
     pub mod update_event_service;
 }
 
@@ -45,11 +50,14 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(|| {
         let cors = Cors::default()
+            .allowed_origin(&env::var("FRONT_DOMAIN").unwrap())
             .allowed_methods(vec!["GET", "POST", "PUT", "OPTIONS", "DELETE"])
             .allowed_header(http::header::CONTENT_TYPE);
         App::new()
             .wrap(cors)
             .service(controller::update_event_info_controller::update_event_info)
+            .service(controller::get_event_info_controller::get_event_master)
+            .service(controller::get_event_info_controller::get_event_list)
     })
     .bind("0.0.0.0:8080")?
     .run()

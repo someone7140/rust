@@ -75,6 +75,13 @@ pub async fn update_event_execute() -> Result<(), Box<dyn Error>> {
         // 削除処理
         let delete_count = delete_targets_vec_refer.len();
         if delete_count > 0 {
+            for (_, delete_target_ref) in delete_targets_vec_refer.into_iter().enumerate() {
+                event_repository::delete_events(
+                    location_key.clone(),
+                    delete_target_ref.event_date.clone(),
+                    delete_target_ref.update_time.clone(),
+                )?;
+            }
             event_search_info_repository::delete_event_update_history(
                 location_key.clone(),
                 delete_targets_vec_refer

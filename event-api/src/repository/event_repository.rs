@@ -23,3 +23,13 @@ pub fn delete_events(
     )?;
     return Ok(());
 }
+
+pub fn get_events(
+    location_key: String,
+    event_date: String,
+) -> Result<Vec<EventCollection>, Box<dyn Error>> {
+    let col = mongodb_client::get_mongodb_db_connection()?.collection::<EventCollection>("event");
+    let query = doc! { "location_key": location_key , "event_date":  event_date };
+    let results = col.find(query, None)?.flatten().collect();
+    return Ok(results);
+}
