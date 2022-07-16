@@ -1,4 +1,5 @@
 use actix_cors::Cors;
+use actix_files as fs;
 use actix_web::http;
 use actix_web::App;
 use actix_web::HttpServer;
@@ -55,6 +56,7 @@ async fn main() -> std::io::Result<()> {
             .allowed_header(http::header::CONTENT_TYPE);
         App::new()
             .wrap(cors)
+            .service(fs::Files::new("/contents", "static/").show_files_listing())
             .service(controller::update_event_info_controller::update_event_info)
             .service(controller::get_event_info_controller::get_event_master)
             .service(controller::get_event_info_controller::get_event_list)
