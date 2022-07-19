@@ -48,6 +48,11 @@ async fn main() -> std::io::Result<()> {
     };
     // 環境毎にファイルを配置して読み込み
     dotenv::from_filename(".env.".to_string() + &environment).ok();
+    // ポートの取得
+    let port = env::var("PORT")
+        .unwrap_or_else(|_| "8080".to_string())
+        .parse::<u16>()
+        .unwrap();
 
     HttpServer::new(|| {
         let cors = Cors::default()
@@ -56,12 +61,12 @@ async fn main() -> std::io::Result<()> {
             .allowed_header(http::header::CONTENT_TYPE);
         App::new()
             .wrap(cors)
-            .service(fs::Files::new("/contents", "static/").show_files_listing())
+            .service(fs::Files::new("/contents", "asset/").show_files_listing())
             .service(controller::update_event_info_controller::update_event_info)
             .service(controller::get_event_info_controller::get_event_master)
             .service(controller::get_event_info_controller::get_event_list)
     })
-    .bind("0.0.0.0:8080")?
+    .bind(("0.0.0.0", port))?
     .run()
     .await
 }
