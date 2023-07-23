@@ -1,0 +1,1 @@
+- 「wasm-pack build --target web」で、wasm ファイルを作成。

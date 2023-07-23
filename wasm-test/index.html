@@ -1,0 +1,29 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>クロールテスト</title>
+    <script type="module" src="./js/main.js?ver=1.0"></script>
+  </head>
+
+  <body>
+    <div id="submitForm">
+      <input
+        id="userId"
+        type="text"
+        name="userId"
+        data-bind="userId"
+        placeholder="ユーザID"
+      />
+      <input
+        id="password"
+        type="password"
+        name="password"
+        data-bind="password"
+        placeholder="パスワード"
+      />
+      <button id="submitButton" type="button" onClick="onSubmitClick()">
+        送信
+      </button>
+    </div>
+  </body>
+</html>
