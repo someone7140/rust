@@ -3,8 +3,7 @@ use google_oauth::AsyncClient;
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
 use oauth2::{
-    AuthUrl, AuthorizationCode, ClientId, ClientSecret, PkceCodeChallenge, RedirectUrl,
-    TokenResponse, TokenUrl,
+    AuthUrl, AuthorizationCode, ClientId, ClientSecret, RedirectUrl, TokenResponse, TokenUrl,
 };
 
 use crate::graphql_object::horse_enum::ErrorType;
@@ -44,10 +43,14 @@ pub async fn validate_google_auth_code(
 
     // アクセストークンからユーザ情報を取得
     let google_client = AsyncClient::new("");
-    let payload = google_client
-        .validate_access_token(access_token)
-        .await
-        .unwrap();
+    let payload_result = google_client.validate_access_token(access_token).await;
+    let payload = match payload_result {
+        Ok(t) => t,
+        Err(error) => {
+            return Err(Error::new(error.to_string())
+                .extend_with(|_, e| e.set("type", ErrorType::AuthError)))
+        }
+    };
 
     Ok(payload.name.unwrap())
 }
