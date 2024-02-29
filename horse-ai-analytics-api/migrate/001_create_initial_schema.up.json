@@ -1,0 +1,29 @@
+[
+  {
+    "createIndexes": "account_users",
+    "indexes": [
+      {
+        "key": {
+          "user_setting_id": 1
+        },
+        "name": "user_setting_id_index",
+        "unique": true,
+        "background": true
+      },
+      {
+        "key": {
+          "email": 1
+        },
+        "name": "email_index",
+        "background": true
+      },
+      {
+        "key": {
+          "gmail": 1
+        },
+        "name": "gmail_index",
+        "background": true
+      }
+    ]
+  }
+]

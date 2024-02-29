@@ -1,5 +1,7 @@
 use async_graphql::*;
-use google_oauth::AsyncClient;
+use google_oauth::{AsyncClient, GoogleAccessTokenPayload};
+use mongodb::bson::doc;
+use mongodb::Database;
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
 use oauth2::{
@@ -7,13 +9,16 @@ use oauth2::{
 };
 
 use crate::graphql_object::horse_enum::ErrorType;
+use crate::repository::account_users_repository;
+use crate::service::jwt_service;
 
-pub async fn validate_google_auth_code(
+// googleの認可コードからtokenを取得
+pub async fn get_token_from_google_auth_code(
     auth_code: String,
     client_id: String,
     client_secret: String,
     redirect_url: String,
-) -> Result<String> {
+) -> Result<GoogleAccessTokenPayload> {
     // oauth用のクライアント
     let google_client_id = ClientId::new(client_id);
     let google_client_secret = ClientSecret::new(client_secret);
@@ -52,5 +57,25 @@ pub async fn validate_google_auth_code(
         }
     };
 
-    Ok(payload.name.unwrap())
+    Ok(payload)
+}
+
+// gmailを元に認証用のtokenを生成
+pub async fn make_for_register_auth_token(
+    mongo_db: Database,
+    jwt_secret: String,
+    gmail: String,
+) -> Result<String> {
+    let find_result =
+        account_users_repository::find_one_user_by_filter(mongo_db, doc! { "gmail": gmail.clone()})
+            .await;
+    let token = match find_result {
+        Some(_) => {
+            return Err(Error::new("Already registered user")
+                .extend_with(|_, e| e.set("type", ErrorType::AlreadyExistsError)))
+        }
+        None => jwt_service::make_jwt(&jwt_secret, &gmail, 2),
+    };
+
+    Ok(token)
 }

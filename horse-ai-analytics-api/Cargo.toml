@@ -13,3 +13,7 @@ shuttle-actix-web = "0.38.0"
 shuttle-runtime = "0.38.0"
 shuttle-secrets = "0.38.0"
 tokio = "1.36.0"
+mongodb = "2.8.1"
+serde = { version = "1.0.197", features = ["derive"] }
+jsonwebtoken = "9"
+chrono = "0.4.34"
