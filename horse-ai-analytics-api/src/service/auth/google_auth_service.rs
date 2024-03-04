@@ -1,7 +1,6 @@
 use async_graphql::*;
 use google_oauth::{AsyncClient, GoogleAccessTokenPayload};
 use mongodb::bson::doc;
-use mongodb::Database;
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
 use oauth2::{
@@ -9,11 +8,119 @@ use oauth2::{
 };
 
 use crate::graphql_object::horse_enum::ErrorType;
+use crate::graphql_object::horse_model;
 use crate::repository::account_users_repository;
 use crate::service::jwt_service;
+use crate::struct_def::common_struct;
+
+// googleの認可コードを検証し認証用トークンを生成
+pub async fn validate_auth_code(
+    context: &mut &common_struct::CommonContext,
+    auth_code: String,
+) -> Result<horse_model::ValidateGoogleAuthCodeResponse> {
+    // 認可コードからtokenを取得
+    let auth_result = match (
+        context.secrets.get("GOOGLE_AUTH_CLIENT_ID"),
+        context.secrets.get("GOOGLE_AUTH_CLIENT_SECRET"),
+        context.secrets.get("FRONT_DOMAIN"),
+    ) {
+        (Some(client_id), Some(client_secret), Some(redirect_url)) => {
+            get_token_from_google_auth_code(auth_code, client_id, client_secret, redirect_url).await
+        }
+        (_, _, _) => {
+            return Err(Error::new("Get google auth config Error")
+                .extend_with(|_, e| e.set("type", ErrorType::SystemError)))
+        }
+    };
+
+    // googleのtokenからgmailを取得し認証用トークンを生成
+    let auth_token = match (auth_result, context.secrets.get("JWT_SECRET")) {
+        (Ok(google_token), Some(jwt_secret)) => {
+            let gmail = google_token.email.unwrap();
+            let find_result = account_users_repository::find_one_user_by_filter(
+                context.mongo_db.clone(),
+                doc! { "gmail": gmail.clone()},
+            )
+            .await;
+            let token = match find_result {
+                Some(_) => {
+                    return Err(Error::new("Already registered user")
+                        .extend_with(|_, e| e.set("type", ErrorType::AlreadyExistsError)))
+                }
+                None => {
+                    jwt_service::make_jwt(&jwt_secret, &gmail, jwt_service::TEMP_TOKEN_EXP_HOURS)
+                }
+            };
+            token
+        }
+        (Err(error), _) => return Err(error),
+        (_, _) => {
+            return Err(Error::new("Failed google auth")
+                .extend_with(|_, e| e.set("type", ErrorType::SystemError)))
+        }
+    };
+    Ok(horse_model::ValidateGoogleAuthCodeResponse { auth_token })
+}
+
+// googleの認可コードからユーザを取得
+pub async fn get_user_by_auth_code(
+    context: &mut &common_struct::CommonContext,
+    auth_code: String,
+) -> Result<horse_model::AccountUserResponse> {
+    // 認可コードからtokenを取得
+    let auth_result = match (
+        context.secrets.get("GOOGLE_AUTH_CLIENT_ID"),
+        context.secrets.get("GOOGLE_AUTH_CLIENT_SECRET"),
+        context.secrets.get("FRONT_DOMAIN"),
+    ) {
+        (Some(client_id), Some(client_secret), Some(redirect_url)) => {
+            get_token_from_google_auth_code(auth_code, client_id, client_secret, redirect_url).await
+        }
+        (_, _, _) => {
+            return Err(Error::new("Get google auth config Error")
+                .extend_with(|_, e| e.set("type", ErrorType::SystemError)))
+        }
+    };
+
+    // googleのtokenからgmailを取得しユーザを取得
+    match (auth_result, context.secrets.get("JWT_SECRET")) {
+        (Ok(google_token), Some(jwt_secret)) => {
+            let gmail = google_token.email.unwrap();
+            let find_result = account_users_repository::find_one_user_by_filter(
+                context.mongo_db.clone(),
+                doc! { "gmail": gmail.clone()},
+            )
+            .await;
+            match find_result {
+                Some(account_user) => {
+                    // 認証用のトークンを生成
+                    let auth_token = jwt_service::make_jwt(
+                        &jwt_secret,
+                        &account_user.id,
+                        jwt_service::STORE_TOKEN_EXP_HOURS,
+                    );
+                    return Ok(horse_model::AccountUserResponse {
+                        auth_token: Some(auth_token),
+                        user_setting_id: account_user.user_setting_id,
+                        name: account_user.name,
+                    });
+                }
+                None => {
+                    return Err(Error::new("Not found user")
+                        .extend_with(|_, e| e.set("type", ErrorType::AuthError)))
+                }
+            };
+        }
+        (Err(error), _) => return Err(error),
+        (_, _) => {
+            return Err(Error::new("Failed google auth")
+                .extend_with(|_, e| e.set("type", ErrorType::SystemError)))
+        }
+    };
+}
 
 // googleの認可コードからtokenを取得
-pub async fn get_token_from_google_auth_code(
+async fn get_token_from_google_auth_code(
     auth_code: String,
     client_id: String,
     client_secret: String,
@@ -58,24 +165,4 @@ pub async fn get_token_from_google_auth_code(
     };
 
     Ok(payload)
-}
-
-// gmailを元に認証用のtokenを生成
-pub async fn make_for_register_auth_token(
-    mongo_db: Database,
-    jwt_secret: String,
-    gmail: String,
-) -> Result<String> {
-    let find_result =
-        account_users_repository::find_one_user_by_filter(mongo_db, doc! { "gmail": gmail.clone()})
-            .await;
-    let token = match find_result {
-        Some(_) => {
-            return Err(Error::new("Already registered user")
-                .extend_with(|_, e| e.set("type", ErrorType::AlreadyExistsError)))
-        }
-        None => jwt_service::make_jwt(&jwt_secret, &gmail, 2),
-    };
-
-    Ok(token)
 }

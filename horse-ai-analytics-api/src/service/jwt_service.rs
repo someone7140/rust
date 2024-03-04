@@ -5,9 +5,12 @@ use jsonwebtoken::{
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
+pub const TEMP_TOKEN_EXP_HOURS: u64 = 3;
+pub const STORE_TOKEN_EXP_HOURS: u64 = 4320;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    contents: String,
+    pub contents: String,
     iat: i64,
     exp: i64,
 }
@@ -34,7 +37,10 @@ pub fn make_jwt(secret: &String, contents: &String, exp_hours: u64) -> String {
     .unwrap()
 }
 
-fn decode_jwt(jwt: &str, secret: &str) -> Result<TokenData<Claims>, jsonwebtoken::errors::Error> {
+pub fn decode_jwt(
+    jwt: &str,
+    secret: &str,
+) -> Result<TokenData<Claims>, jsonwebtoken::errors::Error> {
     decode::<Claims>(
         jwt,
         &DecodingKey::from_secret(secret.as_ref()),

@@ -4,16 +4,25 @@ name = "horse-ai-analytics-api"
 version = "0.1.0"
 
 [dependencies]
+actix-cors = "0.7.0"
 actix-web = "4.5.1"
 async-graphql = "7.0.1"
 async-graphql-actix-web = "7.0.1"
-oauth2 = "4.4.2"
+chrono = "0.4.34"
 google-oauth = "1.10.1"
+jsonwebtoken = "9"
+mongodb = "2.8.1"
+oauth2 = "4.4.2"
+serde = {version = "1.0.197", features = ["derive"]}
 shuttle-actix-web = "0.38.0"
 shuttle-runtime = "0.38.0"
 shuttle-secrets = "0.38.0"
 tokio = "1.36.0"
-mongodb = "2.8.1"
-serde = { version = "1.0.197", features = ["derive"] }
-jsonwebtoken = "9"
-chrono = "0.4.34"
+
+[dependencies.uuid]
+features = [
+  "v4", # Lets you generate random UUIDs
+  "fast-rng", # Use a faster (but still sufficiently random) RNG
+  "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
+]
+version = "1.7.0"

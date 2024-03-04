@@ -1,7 +1,6 @@
 use actix_web::{
-    guard,
     web::{self, Data, ServiceConfig},
-    HttpResponse, Result,
+    HttpRequest, HttpResponse, Result,
 };
 use async_graphql::{EmptySubscription, Schema};
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
@@ -10,7 +9,8 @@ use shuttle_actix_web::ShuttleActixWeb;
 use shuttle_runtime::Error;
 use shuttle_secrets::SecretStore;
 
-use graphql_object::{horse_enum, horse_model, horse_mutation, horse_query};
+use graphql_object::{horse_enum, horse_mutation, horse_query};
+use service::{auth::account_user_service, common_service};
 use struct_def::common_struct;
 
 mod graphql_object {
@@ -18,6 +18,7 @@ mod graphql_object {
     pub mod horse_model;
     pub mod horse_mutation;
     pub mod horse_query;
+    pub mod horse_role;
 }
 
 mod repository {
@@ -26,8 +27,10 @@ mod repository {
 
 mod service {
     pub mod auth {
+        pub mod account_user_service;
         pub mod google_auth_service;
     }
+    pub mod common_service;
     pub mod jwt_service;
 }
 
@@ -38,8 +41,24 @@ mod struct_def {
 
 type ApiSchema = Schema<horse_query::Query, horse_mutation::Mutation, EmptySubscription>;
 
-async fn index(schema: Data<ApiSchema>, req: GraphQLRequest) -> GraphQLResponse {
-    schema.execute(req.into_inner()).await.into()
+async fn index(
+    schema: Data<ApiSchema>,
+    secrets_data: Data<SecretStore>,
+    req: HttpRequest,
+    graphql_req: GraphQLRequest,
+) -> GraphQLResponse {
+    let mut request = graphql_req.into_inner();
+    // secretからjwtのシークレットキーを取得
+    if let Some(jwt_secret) = secrets_data.clone().get("JWT_SECRET") {
+        // Authorizationヘッダーのトークンから認証情報を取得
+        if let Some(auth_context) =
+            account_user_service::get_token_from_authorization_header(req.headers(), jwt_secret)
+        {
+            // 認証情報に成功したらrequestのcontextにセット
+            request = request.data(auth_context);
+        }
+    }
+    schema.execute(request).await.into()
 }
 
 async fn sdl_export(schema: Data<ApiSchema>) -> Result<HttpResponse> {
@@ -84,13 +103,28 @@ async fn main(
         EmptySubscription,
     )
     .register_output_type::<horse_enum::ErrorType>()
-    .data(common_struct::CommonContext { secrets, mongo_db })
+    .data(common_struct::CommonContext {
+        secrets: secrets.clone(),
+        mongo_db,
+    })
     .finish();
-
     let config = move |cfg: &mut ServiceConfig| {
         cfg.app_data(Data::new(schema.clone()))
-            .service(web::resource("/").guard(guard::Post()).to(index))
-            .service(web::resource("/").guard(guard::Get()).to(sdl_export));
+            .app_data(Data::new(secrets.clone()))
+            .service(
+                web::resource("/graphql")
+                    .wrap(common_service::get_cors_setting(
+                        &(secrets.clone().get("FRONT_DOMAIN").unwrap()),
+                    ))
+                    .to(index),
+            )
+            .service(
+                web::resource("/sdl")
+                    .wrap(common_service::get_cors_setting(
+                        &(secrets.clone().get("FRONT_DOMAIN").unwrap()),
+                    ))
+                    .to(sdl_export),
+            );
     };
     Ok(config.into())
 }
