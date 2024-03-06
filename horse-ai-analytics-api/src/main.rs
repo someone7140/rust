@@ -31,6 +31,10 @@ mod service {
         pub mod google_auth_service;
     }
     pub mod common_service;
+    pub mod external_info {
+        pub mod external_info_service;
+        pub mod umanity_service;
+    }
     pub mod jwt_service;
 }
 
@@ -50,11 +54,11 @@ async fn index(
     let mut request = graphql_req.into_inner();
     // secretからjwtのシークレットキーを取得
     if let Some(jwt_secret) = secrets_data.clone().get("JWT_SECRET") {
-        // Authorizationヘッダーのトークンから認証情報を取得
+        // ヘッダーから認証情報を取得
         if let Some(auth_context) =
             account_user_service::get_token_from_authorization_header(req.headers(), jwt_secret)
         {
-            // 認証情報に成功したらrequestのcontextにセット
+            // 認証情報の取得に成功したらrequestのcontextにセット
             request = request.data(auth_context);
         }
     }

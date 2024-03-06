@@ -11,3 +11,10 @@ pub struct AccountUserResponse {
 pub struct ValidateGoogleAuthCodeResponse {
     pub auth_token: String,
 }
+
+#[derive(SimpleObject)]
+pub struct GetRaceInfoResponse {
+    pub race_name: String,
+    pub race_date_yyyy_mm_dd: String,
+    pub prompt: String,
+}

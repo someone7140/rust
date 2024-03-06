@@ -4,5 +4,6 @@ use async_graphql::*;
 pub enum ErrorType {
     AuthError,
     AlreadyExistsError,
+    BadRequest,
     SystemError,
 }

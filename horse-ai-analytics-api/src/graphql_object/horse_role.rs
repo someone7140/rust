@@ -1,5 +1,4 @@
 use async_graphql::*;
-use async_trait::async_trait;
 
 use crate::struct_def::common_struct;
 
@@ -19,7 +18,6 @@ impl RoleGuard {
     }
 }
 
-#[async_trait]
 impl Guard for RoleGuard {
     async fn check(&self, ctx: &Context<'_>) -> Result<()> {
         if Some(&self.role) == Some(&Role::Anonymous) {
