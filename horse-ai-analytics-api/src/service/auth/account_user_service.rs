@@ -7,7 +7,7 @@ use crate::graphql_object::horse_enum::ErrorType;
 use crate::graphql_object::horse_model;
 use crate::repository::account_users_repository;
 use crate::service::jwt_service;
-use crate::struct_def::{common_struct, db_model};
+use crate::struct_const_def::{common_struct, db_model};
 
 // リクエストのAuthorizationヘッダーを複合化してユーザidを取得
 pub fn get_token_from_authorization_header(

@@ -1,7 +1,7 @@
 use async_graphql::*;
 
 use crate::service::auth::{account_user_service, google_auth_service};
-use crate::struct_def::common_struct;
+use crate::struct_const_def::common_struct;
 
 use crate::graphql_object::horse_model;
 

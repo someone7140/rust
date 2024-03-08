@@ -1,6 +1,6 @@
 use async_graphql::*;
 
-use crate::struct_def::common_struct;
+use crate::struct_const_def::common_struct;
 
 #[derive(Eq, PartialEq, Copy, Clone)]
 pub enum Role {

@@ -6,7 +6,7 @@ version = "0.1.0"
 [dependencies]
 actix-cors = "0.7.0"
 actix-web = "4.5.1"
-async-graphql = {version = "7.0.2", features = ["chrono", "chrono-tz"] }
+async-graphql = "7.0.2"
 async-graphql-actix-web = "7.0.2"
 chrono = "0.4.34"
 chrono-tz = "0.8.6"

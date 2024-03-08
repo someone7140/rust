@@ -1,6 +1,6 @@
 use mongodb::{bson::Document, error::Error, results::InsertOneResult, Database};
 
-use crate::struct_def::db_model;
+use crate::struct_const_def::db_model;
 
 pub async fn find_one_user_by_filter(
     db: Database,

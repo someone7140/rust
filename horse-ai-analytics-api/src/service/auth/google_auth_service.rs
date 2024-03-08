@@ -11,7 +11,7 @@ use crate::graphql_object::horse_enum::ErrorType;
 use crate::graphql_object::horse_model;
 use crate::repository::account_users_repository;
 use crate::service::jwt_service;
-use crate::struct_def::common_struct;
+use crate::struct_const_def::common_struct;
 
 // googleの認可コードを検証し認証用トークンを生成
 pub async fn validate_auth_code(

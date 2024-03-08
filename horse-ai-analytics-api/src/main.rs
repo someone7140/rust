@@ -11,7 +11,7 @@ use shuttle_secrets::SecretStore;
 
 use graphql_object::{horse_enum, horse_mutation, horse_query};
 use service::{auth::account_user_service, common_service};
-use struct_def::common_struct;
+use struct_const_def::common_struct;
 
 mod graphql_object {
     pub mod horse_enum;
@@ -32,15 +32,17 @@ mod service {
     }
     pub mod common_service;
     pub mod external_info {
-        pub mod external_info_service;
+        pub mod external_info_common_service;
+        pub mod external_info_main_service;
         pub mod umanity_service;
     }
     pub mod jwt_service;
 }
 
-mod struct_def {
+mod struct_const_def {
     pub mod common_struct;
     pub mod db_model;
+    pub mod prompt_def;
 }
 
 type ApiSchema = Schema<horse_query::Query, horse_mutation::Mutation, EmptySubscription>;
