@@ -1,8 +1,13 @@
+use std::collections::HashMap;
+
 use async_graphql::*;
+use regex::Regex;
 use scraper::ElementRef;
 use url::Url;
 
 use crate::{graphql_object::horse_enum::ErrorType, struct_const_def::prompt_def};
+
+use super::external_info_common_service;
 
 // urlに指定されたコードから日付とコードを取得
 pub fn get_race_code_and_date_from_url_code(umanity_url: &String) -> Result<(String, String)> {
@@ -10,7 +15,7 @@ pub fn get_race_code_and_date_from_url_code(umanity_url: &String) -> Result<(Str
     let race_code = match Url::parse(umanity_url).and_then(|u| {
         Ok(u.query_pairs()
             .find(|(k, _)| k == "code")
-            .and_then(|param| Some(param.clone().1.to_string())))
+            .and_then(|param| Some(param.1.to_string())))
     }) {
         Ok(Some(code)) => code,
         _ => {
@@ -21,13 +26,14 @@ pub fn get_race_code_and_date_from_url_code(umanity_url: &String) -> Result<(Str
 
     // 日付の文字列
     match (
-        race_code.clone().get(0..4),
-        race_code.clone().get(4..6),
-        race_code.clone().get(6..8),
+        (&race_code).get(0..4),
+        (&race_code).get(4..6),
+        (&race_code).get(6..8),
     ) {
-        (Some(y), Some(m), Some(d)) => {
-            Ok((race_code, (y.to_string() + "/" + m + "/" + d).to_string()))
-        }
+        (Some(y), Some(m), Some(d)) => Ok((
+            race_code.clone(),
+            (y.to_string() + "/" + m + "/" + d).to_string(),
+        )),
         _ => {
             Err(Error::new("Parse error").extend_with(|_, e| e.set("type", ErrorType::BadRequest)))
         }
@@ -65,8 +71,59 @@ pub fn get_race_name_from_html(html_text: &String) -> Result<String> {
     Ok(race_name.to_string())
 }
 
+// race_7のページから近走成績を取得
+pub async fn get_recent_results_from_race_7(race_code: &String) -> HashMap<String, String> {
+    let mut recent_results = HashMap::new();
+    let url = format!(
+        "https://umanity.jp/racedata/race_7.php?t=1&code={race_code_param}",
+        race_code_param = race_code
+    );
+    // 近走成績のurlからhtmlを取得
+    let html = match external_info_common_service::get_html_from_url(&url).await {
+        Ok(text) => text,
+        Err(_) => return recent_results,
+    };
+    let doc = scraper::Html::parse_document(&html);
+
+    for horse_tr_elem in
+        doc.select(&scraper::Selector::parse("table#grace_table1 tbody tr").unwrap())
+    {
+        let td_list: Vec<ElementRef> = horse_tr_elem.child_elements().collect();
+        // 馬のコード
+        if let Some(name_and_id_elem) = td_list[2]
+            .select(&scraper::Selector::parse("a").unwrap())
+            .next()
+        {
+            if let Some(href) = name_and_id_elem.value().attr("href") {
+                let horse_code = get_horse_id_from_url(&("https:".to_string() + href));
+                let mut recent_result_vec: Vec<String> = Vec::new();
+                // 1走前
+                let before1 = get_recent_results_td_from_race_7(td_list[7]);
+                if (&before1).len() > 0 {
+                    recent_result_vec.push(before1)
+                }
+                // 2走前
+                let before2 = get_recent_results_td_from_race_7(td_list[8]);
+                if (&before2).len() > 0 {
+                    recent_result_vec.push(before2)
+                }
+                // 3走前
+                let before3 = get_recent_results_td_from_race_7(td_list[9]);
+                if (&before3).len() > 0 {
+                    recent_result_vec.push(before3)
+                }
+                recent_results.insert(horse_code, recent_result_vec.join(" | "));
+            }
+        }
+    }
+
+    recent_results
+}
+
 // race_7のページから出馬情報を取得
-pub fn get_horse_info_from_race_7(html_text: &String) -> Result<Vec<prompt_def::PromptHorseInfo>> {
+pub async fn get_horse_info_from_race_7(
+    html_text: &String,
+) -> Result<Vec<prompt_def::PromptHorseInfo>> {
     let mut horse_info_list: Vec<prompt_def::PromptHorseInfo> = Vec::new();
 
     let doc: scraper::Html = scraper::Html::parse_document(html_text);
@@ -76,6 +133,7 @@ pub fn get_horse_info_from_race_7(html_text: &String) -> Result<Vec<prompt_def::
         let mut horse_info = prompt_def::PromptHorseInfo::new();
 
         let td_list: Vec<ElementRef> = horse_tr_elem.child_elements().collect();
+
         // 馬の名前とidを取得
         if let Some(name_and_id_elem) = td_list[2]
             .select(&scraper::Selector::parse("a").unwrap())
@@ -90,11 +148,47 @@ pub fn get_horse_info_from_race_7(html_text: &String) -> Result<Vec<prompt_def::
             }
         }
         // 性齢を取得
-        horse_info.gender_and_age = (td_list[3].text().collect::<Vec<_>>()[0]).to_string();
+        horse_info.gender_and_age = (td_list[3].text().collect::<Vec<_>>()[0])
+            .trim()
+            .to_string();
+        // 負担重量を取得
+        if let Ok(weight) = (td_list[4].text().collect::<Vec<_>>()[0])
+            .trim()
+            .to_string()
+            .parse::<f32>()
+        {
+            horse_info.charge_weight = weight
+        }
         // 調教師を取得
-        horse_info.trainer = (td_list[5].text().collect::<Vec<_>>()[0]).to_string();
+        horse_info.trainer = (td_list[5].text().collect::<Vec<_>>()[0])
+            .trim()
+            .to_string();
         // 所属を取得
-        horse_info.belonging = (td_list[6].text().collect::<Vec<_>>()[0]).to_string();
+        horse_info.belonging = (td_list[6].text().collect::<Vec<_>>()[0])
+            .trim()
+            .to_string();
+        // 戦績を取得
+        horse_info.all_results = (td_list[7].text().collect::<Vec<_>>()[0])
+            .trim()
+            .to_string();
+        // 獲得賞金の合計を取得
+        let re = Regex::new(r",").unwrap();
+        horse_info.career_prize_money = re
+            .replace_all(td_list[8].text().collect::<Vec<_>>()[0].trim(), "")
+            .parse()
+            .unwrap();
+        // 父を取得
+        horse_info.father = (td_list[9].text().collect::<Vec<_>>()[0])
+            .trim()
+            .to_string();
+        // 母を取得
+        horse_info.mother = (td_list[10].text().collect::<Vec<_>>()[0])
+            .trim()
+            .to_string();
+        // 母父を取得
+        horse_info.mother_father = (td_list[11].text().collect::<Vec<_>>()[0])
+            .trim()
+            .to_string();
 
         if horse_info.name != prompt_def::HYPHEN {
             horse_info_list.push(horse_info)
@@ -114,4 +208,16 @@ pub fn get_horse_id_from_url(url: &String) -> String {
         Ok(Some(code)) => code,
         _ => prompt_def::HYPHEN.to_string(),
     }
+}
+
+// race_7のテーブルブロックから近走成績を取得
+fn get_recent_results_td_from_race_7(td_elem: ElementRef) -> String {
+    let mut recent_result_vec: Vec<String> = Vec::new();
+    for recent_result_elem in td_elem.select(&scraper::Selector::parse("div").unwrap()) {
+        let text = recent_result_elem.text().collect::<Vec<_>>()[0].trim();
+        if text.len() > 0 {
+            recent_result_vec.push(text.to_string())
+        }
+    }
+    recent_result_vec.join("-")
 }
