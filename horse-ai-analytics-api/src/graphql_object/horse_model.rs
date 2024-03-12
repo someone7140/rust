@@ -17,4 +17,17 @@ pub struct GetRaceInfoResponse {
     pub race_name: String,
     pub race_date_yyyy_mm_dd: String,
     pub prompt: String,
+    pub odds: Option<OddsInfoResponse>,
+}
+
+#[derive(SimpleObject)]
+pub struct OddsInfoResponse {
+    pub odds_url: String,
+    pub odds_list: Vec<OddsInfo>,
+}
+
+#[derive(SimpleObject)]
+pub struct OddsInfo {
+    pub horse_name: String,
+    pub odds: String,
 }

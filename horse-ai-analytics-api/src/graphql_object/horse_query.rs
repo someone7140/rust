@@ -33,4 +33,13 @@ impl Query {
     ) -> Result<horse_model::GetRaceInfoResponse> {
         return external_info_main_service::get_race_info_from_umanity_url(url).await;
     }
+
+    // 指定したurlを元にオッズの情報を取得
+    #[graphql(guard = "RoleGuard::new(Role::User)")]
+    async fn get_odds_info_from_url(
+        &self,
+        #[graphql(validator(min_length = 1))] url: String,
+    ) -> Result<Option<horse_model::OddsInfoResponse>> {
+        return external_info_main_service::get_odds_info_from_umanity_url(url).await;
+    }
 }

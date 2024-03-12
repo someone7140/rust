@@ -4,15 +4,14 @@ use url::Url;
 use crate::graphql_object::horse_enum::ErrorType;
 
 // urlからhtmlを取得
-pub async fn get_html_from_url(url: &String) -> Result<String> {
-    match reqwest::get(url).await {
-        Ok(r) => match r.text().await {
-            Ok(text) => Ok(text),
-            Err(error) => {
-                return Err(Error::new(error.to_string())
-                    .extend_with(|_, e| e.set("type", ErrorType::BadRequest)))
-            }
-        },
+pub async fn get_html_from_url(url: &String, select_encode_opt: Option<&str>) -> Result<String> {
+    let mut encode = "utf-8";
+    if let Some(select_encode) = select_encode_opt {
+        encode = select_encode
+    }
+
+    match reqwest::get(url).await?.text_with_charset(encode).await {
+        Ok(text) => Ok(text),
         Err(error) => {
             return Err(Error::new(error.to_string())
                 .extend_with(|_, e| e.set("type", ErrorType::BadRequest)))
