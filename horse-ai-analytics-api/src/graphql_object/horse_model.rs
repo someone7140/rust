@@ -1,4 +1,4 @@
-use async_graphql::SimpleObject;
+use async_graphql::*;
 
 #[derive(SimpleObject)]
 pub struct AccountUserResponse {
@@ -30,4 +30,21 @@ pub struct OddsInfoResponse {
 pub struct OddsInfo {
     pub horse_name: String,
     pub odds: String,
+}
+
+#[derive(InputObject)]
+pub struct AddRaceInfoInputObject {
+    #[graphql(validator(min_length = 1))]
+    pub race_name: String,
+    pub analytics_url: Option<String>,
+    #[graphql(validator(min_length = 1))]
+    pub race_date: String,
+    pub prompt: Option<String>,
+    pub memo_list: Vec<RaceMemoInputObject>,
+}
+
+#[derive(InputObject)]
+pub struct RaceMemoInputObject {
+    pub title: Option<String>,
+    pub contents: Option<String>,
 }

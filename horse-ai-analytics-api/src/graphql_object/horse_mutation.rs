@@ -1,9 +1,11 @@
 use async_graphql::*;
 
 use crate::service::auth::{account_user_service, google_auth_service};
+use crate::service::race_info::race_info_service;
 use crate::struct_const_def::common_struct;
 
 use crate::graphql_object::horse_model;
+use crate::graphql_object::horse_role::{Role, RoleGuard};
 
 pub struct Mutation;
 
@@ -43,6 +45,23 @@ impl Mutation {
             auth_token,
             user_setting_id,
             name,
+        )
+        .await;
+    }
+
+    // レース情報の追加
+    #[graphql(guard = "RoleGuard::new(Role::User)")]
+    async fn add_race_info(
+        &self,
+        ctx: &Context<'_>,
+        input: horse_model::AddRaceInfoInputObject,
+    ) -> Result<bool> {
+        let common_context = &mut ctx.data_unchecked::<common_struct::CommonContext>();
+        let auth_context = &mut ctx.data_unchecked::<common_struct::AuthContext>();
+        return race_info_service::add_race_info(
+            common_context,
+            auth_context.clone().account_id,
+            input,
         )
         .await;
     }
