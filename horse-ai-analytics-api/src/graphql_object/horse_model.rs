@@ -48,3 +48,17 @@ pub struct RaceMemoInputObject {
     pub title: Option<String>,
     pub contents: Option<String>,
 }
+
+#[derive(InputObject)]
+pub struct RaceInfoListFilterInputObject {
+    pub start_race_date: Option<String>,
+    pub end_race_date: Option<String>,
+    pub keyword: Option<String>,
+}
+
+#[derive(SimpleObject)]
+pub struct RaceInfoForList {
+    pub id: String,
+    pub race_name: String,
+    pub race_date: String,
+}

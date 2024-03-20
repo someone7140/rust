@@ -149,19 +149,23 @@ pub fn get_horse_info_from_race_7(html_text: &String) -> Result<Vec<prompt_def::
             }
         }
         // 性齢を取得
-        horse_info.gender_and_age = (td_list[3].text().collect::<Vec<_>>()[0])
-            .trim()
-            .to_string();
+        let gender_and_age_td_text_vec = td_list[3].text().collect::<Vec<_>>();
+        if (&gender_and_age_td_text_vec).len() > 0 {
+            horse_info.gender_and_age = gender_and_age_td_text_vec[0].trim().to_string();
+        }
+
         // 負担重量を取得
         horse_info.charge_weight = td_list[4].text().collect::<Vec<_>>()[0].trim().to_string();
         // 調教師を取得
-        horse_info.trainer = (td_list[5].text().collect::<Vec<_>>()[0])
-            .trim()
-            .to_string();
+        let trainer_td_text_vec = td_list[5].text().collect::<Vec<_>>();
+        if (&trainer_td_text_vec).len() > 0 {
+            horse_info.gender_and_age = trainer_td_text_vec[0].trim().to_string();
+        }
         // 所属を取得
-        horse_info.belonging = (td_list[6].text().collect::<Vec<_>>()[0])
-            .trim()
-            .to_string();
+        let belonging_td_text_vec = td_list[6].text().collect::<Vec<_>>();
+        if (&belonging_td_text_vec).len() > 0 {
+            horse_info.belonging = belonging_td_text_vec[0].trim().to_string();
+        }
         // 戦績を取得
         horse_info.all_results = (td_list[7].text().collect::<Vec<_>>()[0])
             .trim()
@@ -173,17 +177,20 @@ pub fn get_horse_info_from_race_7(html_text: &String) -> Result<Vec<prompt_def::
             .parse()
             .unwrap();
         // 父を取得
-        horse_info.father = (td_list[9].text().collect::<Vec<_>>()[0])
-            .trim()
-            .to_string();
+        let father_td_text_vec = td_list[9].text().collect::<Vec<_>>();
+        if (&father_td_text_vec).len() > 0 {
+            horse_info.father = father_td_text_vec[0].trim().to_string();
+        }
         // 母を取得
-        horse_info.mother = (td_list[10].text().collect::<Vec<_>>()[0])
-            .trim()
-            .to_string();
+        let mother_td_text_vec = td_list[10].text().collect::<Vec<_>>();
+        if (&mother_td_text_vec).len() > 0 {
+            horse_info.mother = mother_td_text_vec[0].trim().to_string();
+        }
         // 母父を取得
-        horse_info.mother_father = (td_list[11].text().collect::<Vec<_>>()[0])
-            .trim()
-            .to_string();
+        let mother_father_td_text_vec = td_list[11].text().collect::<Vec<_>>();
+        if (&mother_father_td_text_vec).len() > 0 {
+            horse_info.mother_father = mother_father_td_text_vec[0].trim().to_string();
+        }
 
         if horse_info.name != prompt_def::HYPHEN {
             horse_info_list.push(horse_info)

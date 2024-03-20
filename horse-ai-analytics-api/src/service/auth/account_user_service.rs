@@ -59,7 +59,7 @@ pub async fn add_account_user_by_google_auth_token(
     // すでに登録されているものかチェック
     let find_result = account_users_repository::find_one_user_by_filter(
         context.mongo_db.clone(),
-        doc! {"$or":vec! [doc! { "gmail": gmail.clone()},doc! { "user_setting_id": user_setting_id.clone()}]},
+        doc! {"$or": vec! [doc! { "gmail": gmail.clone()}, doc! { "user_setting_id": user_setting_id.clone()}]},
     )
     .await;
     // 未登録であれば登録するオブジェクトを生成

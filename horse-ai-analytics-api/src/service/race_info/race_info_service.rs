@@ -1,15 +1,16 @@
 use async_graphql::*;
 use chrono::prelude::*;
+use futures_util::StreamExt;
 use mongodb::bson;
 use uuid::Uuid;
 
 use crate::graphql_object::horse_enum::ErrorType;
-use crate::graphql_object::horse_model;
+use crate::graphql_object::horse_model::{self};
 use crate::repository::race_info_repository;
 use crate::service::common_service;
 use crate::struct_const_def::{common_struct, db_model};
 
-// ユーザの追加
+// レース情報の追加
 pub async fn add_race_info(
     context: &mut &common_struct::CommonContext,
     account_user_id: String,
@@ -51,4 +52,40 @@ pub async fn add_race_info(
                 .extend_with(|_, e| e.set("type", ErrorType::SystemError)))
         }
     };
+}
+
+// 登録したレース情報の一覧取得
+pub async fn get_race_info_list_by_account(
+    context: &mut &common_struct::CommonContext,
+    account_user_id: String,
+    filter: horse_model::RaceInfoListFilterInputObject,
+) -> Result<Vec<horse_model::RaceInfoForList>> {
+    // クエリ実行
+    let mut race_info_cur = race_info_repository::get_race_info_list(
+        context.mongo_db.clone(),
+        account_user_id.clone(),
+        filter.start_race_date,
+        filter.end_race_date,
+        filter.keyword,
+        200,
+    )
+    .await;
+
+    let mut result_vec: Vec<horse_model::RaceInfoForList> = Vec::new();
+    while let Some(doc) = race_info_cur.next().await {
+        if let Ok(race_info) = doc {
+            result_vec.push(horse_model::RaceInfoForList {
+                id: race_info.id,
+                race_name: race_info.race_name,
+                race_date: match common_service::get_jst_date_from_timestamp_millis(
+                    race_info.race_date.timestamp_millis(),
+                ) {
+                    Ok(jst_date) => jst_date.format("%Y/%m/%d").to_string(),
+                    _ => "".to_string(),
+                },
+            })
+        }
+    }
+
+    return Ok(result_vec);
 }
