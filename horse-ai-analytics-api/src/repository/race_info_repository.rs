@@ -6,7 +6,7 @@ use mongodb::{
     bson::{self, doc},
     error::Error,
     options::FindOptions,
-    results::InsertOneResult,
+    results::{DeleteResult, InsertOneResult},
     Cursor, Database,
 };
 
@@ -17,6 +17,22 @@ pub async fn add_race_info(
     let collection = db.collection::<db_model::RaceInfo>(db_model::RACE_INFO_COLLECTION);
     let insert_one_result = collection.insert_one(race_info, None).await;
     return insert_one_result;
+}
+
+pub async fn delete_race_info(
+    db: Database,
+    account_user_id: String,
+    race_info_id: String,
+) -> Result<DeleteResult, Error> {
+    let collection = db.collection::<db_model::RaceInfo>(db_model::RACE_INFO_COLLECTION);
+    // フィルター
+    let filter_doc = doc! { "$and": [
+        doc! { "account_user_id": account_user_id.clone()},
+        doc! { "_id": race_info_id.clone()},
+    ]};
+
+    let delete_one_result = collection.delete_one(filter_doc, None).await;
+    return delete_one_result;
 }
 
 pub async fn get_race_info_list(
@@ -63,5 +79,20 @@ pub async fn get_race_info_list(
         .build();
 
     let result = collection.find(filter_doc, find_options).await;
+    return result.unwrap();
+}
+
+pub async fn get_race_info_detail(
+    db: Database,
+    account_user_id: String,
+    race_info_id: String,
+) -> Option<RaceInfo> {
+    let collection = db.collection::<db_model::RaceInfo>(db_model::RACE_INFO_COLLECTION);
+    // フィルター
+    let filter_doc = doc! { "$and": [
+        doc! { "account_user_id": account_user_id.clone()},
+        doc! { "_id": race_info_id.clone()},
+    ]};
+    let result = collection.find_one(filter_doc, None).await;
     return result.unwrap();
 }

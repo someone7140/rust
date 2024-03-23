@@ -62,3 +62,21 @@ pub struct RaceInfoForList {
     pub race_name: String,
     pub race_date: String,
 }
+
+#[derive(SimpleObject)]
+pub struct RaceInfoDetail {
+    pub id: String,
+    pub race_name: String,
+    pub analytics_url: Option<String>,
+    pub race_date: String,
+    pub prompt: Option<String>,
+    pub memo_list: Vec<RaceMemo>,
+    pub odds: Option<OddsInfoResponse>,
+}
+
+#[derive(SimpleObject)]
+pub struct RaceMemo {
+    pub id: String,
+    pub title: Option<String>,
+    pub contents: Option<String>,
+}

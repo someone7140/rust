@@ -49,7 +49,7 @@ impl Query {
     async fn get_my_race_info_list(
         &self,
         ctx: &Context<'_>,
-        filter: horse_model::RaceInfoListFilterInputObject,
+        filter: Option<horse_model::RaceInfoListFilterInputObject>,
     ) -> Result<Vec<horse_model::RaceInfoForList>> {
         let common_context = &mut ctx.data_unchecked::<common_struct::CommonContext>();
         let auth_context = &mut ctx.data_unchecked::<common_struct::AuthContext>();
@@ -57,6 +57,23 @@ impl Query {
             common_context,
             auth_context.clone().account_id,
             filter,
+        )
+        .await;
+    }
+
+    // レース情報の詳細
+    #[graphql(guard = "RoleGuard::new(Role::User)")]
+    async fn get_race_info_detail(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(validator(min_length = 1))] race_info_id: String,
+    ) -> Result<Option<horse_model::RaceInfoDetail>> {
+        let common_context = &mut ctx.data_unchecked::<common_struct::CommonContext>();
+        let auth_context = &mut ctx.data_unchecked::<common_struct::AuthContext>();
+        return race_info_service::get_race_info_detail(
+            common_context,
+            auth_context.clone().account_id,
+            race_info_id,
         )
         .await;
     }

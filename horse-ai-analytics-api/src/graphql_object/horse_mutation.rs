@@ -65,4 +65,21 @@ impl Mutation {
         )
         .await;
     }
+
+    // レース情報の削除
+    #[graphql(guard = "RoleGuard::new(Role::User)")]
+    async fn delete_race_info(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(validator(min_length = 1))] race_info_id: String,
+    ) -> Result<bool> {
+        let common_context = &mut ctx.data_unchecked::<common_struct::CommonContext>();
+        let auth_context = &mut ctx.data_unchecked::<common_struct::AuthContext>();
+        return race_info_service::delete_race_info(
+            common_context,
+            auth_context.clone().account_id,
+            race_info_id,
+        )
+        .await;
+    }
 }
