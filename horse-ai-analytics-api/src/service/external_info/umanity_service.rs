@@ -280,20 +280,39 @@ pub async fn get_odds_info_from_race_8_9(
         Err(_) => return None,
     };
     let doc = scraper::Html::parse_document(&html);
+
+    // 列の位置
+    let mut name_column_index = 3;
+    let mut odds_column_index = 4;
+
+    // すでに着順があるか
+    if let Some(header_elem) = doc
+        .select(&scraper::Selector::parse("table th.table-title").unwrap())
+        .next()
+    {
+        let header_first_title = header_elem.text().collect::<Vec<_>>()[0].trim();
+        if header_first_title == "着順" {
+            name_column_index = 4;
+            odds_column_index = 5
+        }
+    }
+
     for horse_tr_elem in
         doc.select(&scraper::Selector::parse("table tr.odd-row,table tr.even-row").unwrap())
     {
         let td_list: Vec<ElementRef> = horse_tr_elem.child_elements().collect();
 
         // 馬の名前
-        let name_opt = td_list[4]
+        let name_opt = td_list[name_column_index]
             .select(&scraper::Selector::parse("a").unwrap())
             .next()
             .and_then(|elem| Some(elem.text().collect::<Vec<_>>()[0].trim().to_string()));
         match name_opt {
             Some(name) => {
                 // オッズ
-                let odds = td_list[5].text().collect::<Vec<_>>()[0].trim().to_string();
+                let odds = td_list[odds_column_index].text().collect::<Vec<_>>()[0]
+                    .trim()
+                    .to_string();
                 odds_info_list.push(horse_model::OddsInfo {
                     horse_name: name,
                     odds,
