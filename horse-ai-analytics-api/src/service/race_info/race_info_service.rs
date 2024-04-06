@@ -15,7 +15,7 @@ use crate::struct_const_def::{common_struct, db_model};
 pub async fn add_race_info(
     context: &mut &common_struct::CommonContext,
     account_user_id: String,
-    input: horse_model::AddRaceInfoInputObject,
+    input: horse_model::RaceInfoInputObject,
 ) -> Result<bool> {
     // 日付のパース
     let utc_race_date = match common_service::get_utc_date_from_date_str(&input.race_date) {
@@ -47,6 +47,90 @@ pub async fn add_race_info(
     let register_result =
         race_info_repository::add_race_info(context.mongo_db.clone(), race_info_model).await;
     return match register_result {
+        Ok(_) => Ok(true),
+        Err(error) => {
+            return Err(Error::new(error.to_string())
+                .extend_with(|_, e| e.set("type", ErrorType::SystemError)))
+        }
+    };
+}
+
+// レース情報の追加
+pub async fn edit_race_info(
+    context: &mut &common_struct::CommonContext,
+    account_user_id: String,
+    input: horse_model::EditRaceInfoInputObject,
+) -> Result<bool> {
+    // 登録してあるデータを取得
+    let registered_race_info_opt = race_info_repository::get_race_info_detail(
+        context.mongo_db.clone(),
+        account_user_id.clone(),
+        input.id.clone(),
+    )
+    .await;
+    let registered_race_info = match registered_race_info_opt {
+        Some(race_info) => race_info,
+        None => {
+            return Err(Error::new("Can not get race info")
+                .extend_with(|_, e| e.set("type", ErrorType::BadRequest)))
+        }
+    };
+
+    // 日付のパース
+    let utc_race_date = match common_service::get_utc_date_from_date_str(&input.race_info.race_date)
+    {
+        Ok(date) => date,
+        Err(error) => return Err(error),
+    };
+    // 登録するdbモデル
+    let memo_list = input
+        .race_info
+        .memo_list
+        .iter()
+        .map(|memo| {
+            let now_date = bson::DateTime::from_millis(Utc::now().timestamp_millis());
+            if let Some(id) = &(memo.id) {
+                // 登録されたメモがあるか
+                let memo_registered_opt = registered_race_info
+                    .memo_list
+                    .iter()
+                    .find(|registered_race_memo| id.to_string() == registered_race_memo.id);
+
+                db_model::RaceInfoMemo {
+                    id: id.to_string(),
+                    title: memo.title.clone(),
+                    contents: memo.contents.clone(),
+                    create_date: if let Some(memo_registered) = memo_registered_opt {
+                        memo_registered.create_date
+                    } else {
+                        now_date
+                    },
+                }
+            } else {
+                db_model::RaceInfoMemo {
+                    id: Uuid::new_v4().to_string(),
+                    title: memo.title.clone(),
+                    contents: memo.contents.clone(),
+                    create_date: now_date,
+                }
+            }
+        })
+        .collect::<Vec<db_model::RaceInfoMemo>>();
+
+    let race_info_model = db_model::RaceInfo {
+        id: input.id,
+        account_user_id: account_user_id.clone(),
+        race_name: input.race_info.race_name,
+        race_date: bson::DateTime::from_millis(utc_race_date.timestamp_millis()),
+        analytics_url: input.race_info.analytics_url,
+        prompt: input.race_info.prompt,
+        memo_list,
+    };
+
+    // 登録実行
+    let update_result =
+        race_info_repository::update_race_info(context.mongo_db.clone(), race_info_model).await;
+    return match update_result {
         Ok(_) => Ok(true),
         Err(error) => {
             return Err(Error::new(error.to_string())

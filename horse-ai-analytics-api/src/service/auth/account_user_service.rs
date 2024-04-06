@@ -102,6 +102,70 @@ pub async fn add_account_user_by_google_auth_token(
     };
 }
 
+// ユーザの編集
+pub async fn edit_account_user(
+    context: &mut &common_struct::CommonContext,
+    account_id: String,
+    user_setting_id: String,
+    name: String,
+) -> Result<horse_model::AccountUserResponse> {
+    // 登録されているユーザ情報取得
+    let find_by_id_result_opt = account_users_repository::find_one_user_by_filter(
+        context.mongo_db.clone(),
+        doc! {"_id": account_id.clone()},
+    )
+    .await;
+    let mut find_by_id_result = match find_by_id_result_opt {
+        Some(account_user) => account_user,
+        None => {
+            return Err(Error::new("Can not get account user")
+                .extend_with(|_, e| e.set("type", ErrorType::AuthError)))
+        }
+    };
+
+    // user_setting_idが他に使われてるものか
+    if user_setting_id.clone() != find_by_id_result.user_setting_id {
+        let find_by_user_setting_id_result_opt = account_users_repository::find_one_user_by_filter(
+            context.mongo_db.clone(),
+            doc! {"user_setting_id": user_setting_id.clone()},
+        )
+        .await;
+        match find_by_user_setting_id_result_opt {
+            Some(_) => {
+                return Err(Error::new("Duplicate user_setting_id")
+                    .extend_with(|_, e| e.set("type", ErrorType::AlreadyExistsError)))
+            }
+            None => {}
+        };
+    };
+
+    // 登録実行
+    find_by_id_result.name = name;
+    find_by_id_result.user_setting_id = user_setting_id;
+    let update_result =
+        account_users_repository::edit_user(context.mongo_db.clone(), find_by_id_result.clone())
+            .await;
+    match (update_result, context.secrets.get("JWT_SECRET")) {
+        (Ok(_), Some(jwt_secret)) => {
+            // account_idをトークンにして返す
+            let auth_token = jwt_service::make_jwt(
+                &jwt_secret,
+                &find_by_id_result.id,
+                jwt_service::STORE_TOKEN_EXP_HOURS,
+            );
+            return Ok(horse_model::AccountUserResponse {
+                auth_token: Some(auth_token),
+                user_setting_id: find_by_id_result.user_setting_id,
+                name: find_by_id_result.name,
+            });
+        }
+        (_, _) => {
+            return Err(Error::new("Can not update user")
+                .extend_with(|_, e| e.set("type", ErrorType::SystemError)))
+        }
+    };
+}
+
 // idによるユーザ取得
 pub async fn get_account_user_by_id(
     context: &mut &common_struct::CommonContext,

@@ -8,11 +8,11 @@ actix-cors = "0.7.0"
 actix-web = "4.5.1"
 async-graphql = "7.0.3"
 async-graphql-actix-web = "7.0.3"
-chrono = "0.4.34"
+chrono = "0.4.37"
 chrono-tz = "0.8.6"
 google-oauth = "1.10.1"
 jsonwebtoken = "9"
-mongodb = "2.8.1"
+mongodb = "2.8.2"
 oauth2 = "4.4.2"
 scraper = "0.19.0"
 serde = {version = "1.0.197", features = ["derive"]}
@@ -23,7 +23,7 @@ tokio = "1.37.0"
 url = "2.5.0"
 reqwest = { version = "0.11", features = ["json"] }
 phf = { version = "0.11", default-features = false }
-regex = "1.10.3"
+regex = "1.10.4"
 
 [dependencies.uuid]
 features = [
@@ -31,4 +31,4 @@ features = [
   "fast-rng", # Use a faster (but still sufficiently random) RNG
   "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
 ]
-version = "1.7.0"
+version = "1.8.0"

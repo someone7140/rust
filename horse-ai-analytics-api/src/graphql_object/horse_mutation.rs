@@ -49,16 +49,52 @@ impl Mutation {
         .await;
     }
 
+    // ユーザ情報の編集
+    #[graphql(guard = "RoleGuard::new(Role::User)")]
+    async fn edit_account_user(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(validator(min_length = 1))] user_setting_id: String,
+        #[graphql(validator(min_length = 1))] name: String,
+    ) -> Result<horse_model::AccountUserResponse> {
+        let common_context = &mut ctx.data_unchecked::<common_struct::CommonContext>();
+        let auth_context = &mut ctx.data_unchecked::<common_struct::AuthContext>();
+        return account_user_service::edit_account_user(
+            common_context,
+            auth_context.clone().account_id,
+            user_setting_id,
+            name,
+        )
+        .await;
+    }
+
     // レース情報の追加
     #[graphql(guard = "RoleGuard::new(Role::User)")]
     async fn add_race_info(
         &self,
         ctx: &Context<'_>,
-        input: horse_model::AddRaceInfoInputObject,
+        input: horse_model::RaceInfoInputObject,
     ) -> Result<bool> {
         let common_context = &mut ctx.data_unchecked::<common_struct::CommonContext>();
         let auth_context = &mut ctx.data_unchecked::<common_struct::AuthContext>();
         return race_info_service::add_race_info(
+            common_context,
+            auth_context.clone().account_id,
+            input,
+        )
+        .await;
+    }
+
+    // レース情報の編集
+    #[graphql(guard = "RoleGuard::new(Role::User)")]
+    async fn edit_race_info(
+        &self,
+        ctx: &Context<'_>,
+        input: horse_model::EditRaceInfoInputObject,
+    ) -> Result<bool> {
+        let common_context = &mut ctx.data_unchecked::<common_struct::CommonContext>();
+        let auth_context = &mut ctx.data_unchecked::<common_struct::AuthContext>();
+        return race_info_service::edit_race_info(
             common_context,
             auth_context.clone().account_id,
             input,

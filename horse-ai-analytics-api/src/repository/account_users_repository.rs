@@ -1,4 +1,9 @@
-use mongodb::{bson::Document, error::Error, results::InsertOneResult, Database};
+use mongodb::{
+    bson::{doc, Document},
+    error::Error,
+    results::{InsertOneResult, UpdateResult},
+    Database,
+};
 
 use crate::struct_const_def::db_model;
 
@@ -18,4 +23,15 @@ pub async fn add_user(
     let collection = db.collection::<db_model::AccountUsers>(db_model::ACCOUNT_USERS_COLLECTION);
     let insert_one_result = collection.insert_one(add_user, None).await;
     return insert_one_result;
+}
+
+pub async fn edit_user(
+    db: Database,
+    edit_user: db_model::AccountUsers,
+) -> Result<UpdateResult, Error> {
+    let collection = db.collection::<db_model::AccountUsers>(db_model::ACCOUNT_USERS_COLLECTION);
+    let filter = doc! { "_id": edit_user.clone().id };
+    let update_set = doc! {"$set": doc! { "name": edit_user.name, "user_setting_id": edit_user.user_setting_id }};
+    let update_one_result = collection.update_one(filter, update_set, None).await;
+    return update_one_result;
 }

@@ -38,12 +38,12 @@ pub fn get_utc_date_from_date_str(date_str: &String) -> Result<DateTime<Tz>> {
 
 // timestampからJSTのDateTimeを取得
 pub fn get_jst_date_from_timestamp_millis(timestamp_millis: i64) -> Result<DateTime<Tz>> {
-    let native_date = match NaiveDateTime::from_timestamp_millis(timestamp_millis) {
-        Some(date) => date,
+    let date_utc = match DateTime::from_timestamp_millis(timestamp_millis) {
+        Some(date) => date.naive_utc(),
         None => {
             return Err(Error::new("Date parse error")
                 .extend_with(|_, e| e.set("type", ErrorType::BadRequest)))
         }
     };
-    Ok(Tokyo.from_utc_datetime(&native_date))
+    Ok(Tokyo.from_utc_datetime(&date_utc))
 }

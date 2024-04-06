@@ -6,7 +6,7 @@ use mongodb::{
     bson::{self, doc},
     error::Error,
     options::FindOptions,
-    results::{DeleteResult, InsertOneResult},
+    results::{DeleteResult, InsertOneResult, UpdateResult},
     Cursor, Database,
 };
 
@@ -17,6 +17,20 @@ pub async fn add_race_info(
     let collection = db.collection::<db_model::RaceInfo>(db_model::RACE_INFO_COLLECTION);
     let insert_one_result = collection.insert_one(race_info, None).await;
     return insert_one_result;
+}
+
+pub async fn update_race_info(
+    db: Database,
+    race_info: db_model::RaceInfo,
+) -> Result<UpdateResult, Error> {
+    let collection = db.collection::<db_model::RaceInfo>(db_model::RACE_INFO_COLLECTION);
+
+    let filter = doc! { "$and": [
+        doc! { "account_user_id": race_info.account_user_id.clone()},
+        doc! { "_id": race_info.id.clone()},
+    ]};
+    let update_result = collection.replace_one(filter, race_info, None).await;
+    return update_result;
 }
 
 pub async fn delete_race_info(

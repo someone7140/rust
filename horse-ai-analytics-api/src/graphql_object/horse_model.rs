@@ -33,7 +33,14 @@ pub struct OddsInfo {
 }
 
 #[derive(InputObject)]
-pub struct AddRaceInfoInputObject {
+pub struct RaceMemoInputObject {
+    pub id: Option<String>,
+    pub title: Option<String>,
+    pub contents: Option<String>,
+}
+
+#[derive(InputObject)]
+pub struct RaceInfoInputObject {
     #[graphql(validator(min_length = 1))]
     pub race_name: String,
     pub analytics_url: Option<String>,
@@ -44,9 +51,11 @@ pub struct AddRaceInfoInputObject {
 }
 
 #[derive(InputObject)]
-pub struct RaceMemoInputObject {
-    pub title: Option<String>,
-    pub contents: Option<String>,
+pub struct EditRaceInfoInputObject {
+    #[graphql(validator(min_length = 1))]
+    pub id: String,
+    #[graphql(flatten)]
+    pub race_info: RaceInfoInputObject,
 }
 
 #[derive(InputObject)]
