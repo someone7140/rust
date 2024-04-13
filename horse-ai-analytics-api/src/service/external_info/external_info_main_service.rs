@@ -5,6 +5,7 @@ use crate::graphql_object::horse_model;
 
 use crate::service::external_info::external_info_common_service;
 use crate::service::external_info::netkeiba_service;
+use crate::service::external_info::tospo_keiba_service;
 use crate::service::external_info::umanity_service;
 use crate::struct_const_def::prompt_def;
 
@@ -13,7 +14,7 @@ pub async fn get_race_info_from_umanity_url(
     url: String,
 ) -> Result<horse_model::GetRaceInfoResponse> {
     // urlからhtml取得
-    let html = match external_info_common_service::get_html_from_url(&url, None).await {
+    let html = match external_info_common_service::get_contents_from_url(&url, None).await {
         Ok(text) => text,
         Err(error) => return Err(error),
     };
@@ -69,7 +70,7 @@ pub async fn get_race_info_from_umanity_url(
                     "https://umanity.jp/racedata/race_8_1.php?code={race_code_param}",
                     race_code_param = &race_code_umanity
                 );
-                let html_8_1 = match external_info_common_service::get_html_from_url(
+                let html_8_1 = match external_info_common_service::get_contents_from_url(
                     &horse_list_url_page_8_1,
                     None,
                 )
@@ -82,7 +83,7 @@ pub async fn get_race_info_from_umanity_url(
                 {
                     // 付加情報の取得
                     let mut horse_info_page_7_list: Vec<prompt_def::PromptHorseInfo> = Vec::new();
-                    if let Ok(html_page_7) = external_info_common_service::get_html_from_url(
+                    if let Ok(html_page_7) = external_info_common_service::get_contents_from_url(
                         &format!(
                             "https://umanity.jp/racedata/race_7.php?code={race_code_param}",
                             race_code_param = &race_code_umanity
@@ -102,8 +103,10 @@ pub async fn get_race_info_from_umanity_url(
                     let netkeiba_horse_info_map =
                         netkeiba_service::get_netkeiba_info_from_umanity_code(&race_code_umanity)
                             .await;
-                    odds_info =
-                        umanity_service::get_odds_info_from_race_8_9(&race_code_umanity).await;
+                    odds_info = tospo_keiba_service::get_tospo_odds_info_from_umanity_code(
+                        &race_code_umanity,
+                    )
+                    .await;
 
                     for info in results {
                         let mut mut_info = info.clone();
@@ -148,19 +151,6 @@ pub async fn get_race_info_from_umanity_url(
         prompt: get_prompt_text_from_info_list(&race_name, &race_date_yyyy_mm_dd, horse_info_list),
         odds: odds_info,
     });
-}
-
-// ウマニティの出馬表urlをもとにオッズ情報を取得
-pub async fn get_odds_info_from_umanity_url(
-    url: String,
-) -> Result<Option<horse_model::OddsInfoResponse>> {
-    // ウマニティのレースコードを取得
-    let (race_code_umanity, _) = match umanity_service::get_race_code_and_date_from_url_code(&url) {
-        Ok(tuple) => tuple,
-        Err(error) => return Err(error),
-    };
-
-    return Ok(umanity_service::get_odds_info_from_race_8_9(&race_code_umanity).await);
 }
 
 fn get_prompt_text_from_info_list(

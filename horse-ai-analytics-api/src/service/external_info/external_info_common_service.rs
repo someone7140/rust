@@ -4,7 +4,7 @@ use url::Url;
 use crate::graphql_object::horse_enum::ErrorType;
 
 // urlからhtmlを取得
-pub async fn get_html_from_url(url: &String, select_encode_opt: Option<&str>) -> Result<String> {
+pub async fn get_contents_from_url(url: &String, select_encode_opt: Option<&str>) -> Result<String> {
     let mut encode = "utf-8";
     if let Some(select_encode) = select_encode_opt {
         encode = select_encode

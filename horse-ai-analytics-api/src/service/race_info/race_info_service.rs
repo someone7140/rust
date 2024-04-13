@@ -8,7 +8,9 @@ use crate::graphql_object::horse_enum::ErrorType;
 use crate::graphql_object::horse_model::{self};
 use crate::repository::race_info_repository;
 use crate::service::common_service;
-use crate::service::external_info::{external_info_common_service, umanity_service};
+use crate::service::external_info::{
+    external_info_common_service, tospo_keiba_service, umanity_service,
+};
 use crate::struct_const_def::{common_struct, db_model};
 
 // レース情報の追加
@@ -242,7 +244,8 @@ pub async fn get_race_info_detail(
         ) {
             (Ok(page), Ok((race_coe, _))) => {
                 if page != "race_7.php" {
-                    odds_info = umanity_service::get_odds_info_from_race_8_9(&race_coe).await;
+                    odds_info =
+                        tospo_keiba_service::get_tospo_odds_info_from_umanity_code(&race_coe).await;
                 }
             }
             _ => {}

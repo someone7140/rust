@@ -2,19 +2,23 @@ use std::collections::HashMap;
 
 use crate::struct_const_def::prompt_def;
 
-use super::external_info_common_service;
+use crate::service::external_info::external_info_common_service;
+use crate::service::external_info::umanity_service;
 
 // ウマニティのコードをもとにnetkeibaの情報を取得
 pub async fn get_netkeiba_info_from_umanity_code(
     umanity_code: &String,
 ) -> HashMap<String, prompt_def::PromptHorseInfo> {
     let mut netkeiba_horse_info_map = HashMap::<String, prompt_def::PromptHorseInfo>::new();
-    if let Some(netkeiba_code) = get_netkeiba_race_code_from_umanity_code(&umanity_code) {
+    if let Some(race_code) = umanity_service::get_common_race_code_from_umanity_code(&umanity_code)
+    {
         let netkeiba_url = format!(
             "https://race.netkeiba.com/race/shutuba.html?race_id={netkeiba_code_param}",
-            netkeiba_code_param = &netkeiba_code
+            netkeiba_code_param = &race_code
         );
-        match external_info_common_service::get_html_from_url(&netkeiba_url, Some("euc-jp")).await {
+        match external_info_common_service::get_contents_from_url(&netkeiba_url, Some("euc-jp"))
+            .await
+        {
             Ok(net_keiba_html) => {
                 netkeiba_horse_info_map = get_netkeiba_info(&net_keiba_html);
             }
@@ -22,14 +26,6 @@ pub async fn get_netkeiba_info_from_umanity_code(
         };
     }
     netkeiba_horse_info_map
-}
-
-// ウマニティのコードからnetkeibaのコードに変換
-fn get_netkeiba_race_code_from_umanity_code(umanity_code: &String) -> Option<String> {
-    match ((&umanity_code).get(0..4), (&umanity_code).get(8..16)) {
-        (Some(date), Some(race_code)) => Some(date.to_string() + race_code),
-        _ => None,
-    }
 }
 
 // net競馬の出馬表htmlを馬名をキーにMap形式で取得

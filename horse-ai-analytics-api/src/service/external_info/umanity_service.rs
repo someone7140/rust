@@ -5,12 +5,9 @@ use regex::Regex;
 use scraper::ElementRef;
 use url::Url;
 
-use crate::{
-    graphql_object::{horse_enum::ErrorType, horse_model},
-    struct_const_def::prompt_def,
-};
+use crate::{graphql_object::horse_enum::ErrorType, struct_const_def::prompt_def};
 
-use super::external_info_common_service;
+use crate::service::external_info::external_info_common_service;
 
 // urlに指定されたコードから日付とコードを取得
 pub fn get_race_code_and_date_from_url_code(umanity_url: &String) -> Result<(String, String)> {
@@ -82,7 +79,7 @@ pub async fn get_recent_results_from_race_7(race_code: &String) -> HashMap<Strin
         race_code_param = race_code
     );
     // 近走成績のurlからhtmlを取得
-    let html = match external_info_common_service::get_html_from_url(&url, None).await {
+    let html = match external_info_common_service::get_contents_from_url(&url, None).await {
         Ok(text) => text,
         Err(_) => return recent_results,
     };
@@ -266,87 +263,6 @@ pub async fn get_horse_info_from_race_8_1(
     Ok(horse_info_list)
 }
 
-// race_8_9のページからオッズ情報を取得
-pub async fn get_odds_info_from_race_8_9(
-    race_code: &String,
-) -> Option<horse_model::OddsInfoResponse> {
-    let mut odds_info_list: Vec<horse_model::OddsInfo> = Vec::new();
-    let url = format!(
-        "https://umanity.jp/racedata/race_8_9.php?code={race_code_param}",
-        race_code_param = race_code
-    );
-    let html = match external_info_common_service::get_html_from_url(&url, None).await {
-        Ok(text) => text,
-        Err(_) => return None,
-    };
-    let doc = scraper::Html::parse_document(&html);
-
-    // 列の位置
-    let mut name_column_index = 3;
-    let mut odds_column_index = 4;
-
-    // すでに着順があるか
-    if let Some(header_elem) = doc
-        .select(&scraper::Selector::parse("table th.table-title").unwrap())
-        .next()
-    {
-        let header_first_title = header_elem.text().collect::<Vec<_>>()[0].trim();
-        if header_first_title == "着順" {
-            name_column_index = 4;
-            odds_column_index = 5
-        }
-    }
-
-    for horse_tr_elem in
-        doc.select(&scraper::Selector::parse("table tr.odd-row,table tr.even-row").unwrap())
-    {
-        let td_list: Vec<ElementRef> = horse_tr_elem.child_elements().collect();
-
-        // 馬の名前
-        let name_opt = td_list[name_column_index]
-            .select(&scraper::Selector::parse("a").unwrap())
-            .next()
-            .and_then(|elem| Some(elem.text().collect::<Vec<_>>()[0].trim().to_string()));
-        match name_opt {
-            Some(name) => {
-                // オッズ
-                let odds = td_list[odds_column_index].text().collect::<Vec<_>>()[0]
-                    .trim()
-                    .to_string();
-                odds_info_list.push(horse_model::OddsInfo {
-                    horse_name: name,
-                    odds,
-                })
-            }
-            _ => {}
-        }
-    }
-
-    if (&odds_info_list).len() < 1 {
-        return None;
-    }
-    odds_info_list.sort_by(|a, b| {
-        let a_odds = match a.odds.parse::<f32>() {
-            Ok(odds) => odds,
-            _ => 9999999999.0,
-        };
-        let b_odds = match b.odds.parse::<f32>() {
-            Ok(odds) => odds,
-            _ => 9999999999.0,
-        };
-
-        a_odds.partial_cmp(&b_odds).unwrap()
-    });
-
-    Some(horse_model::OddsInfoResponse {
-        odds_url: format!(
-            "https://umanity.jp/racedata/race_mark.php?code={race_code_param}",
-            race_code_param = race_code
-        ),
-        odds_list: odds_info_list,
-    })
-}
-
 // 馬のurlからidを取得
 pub fn get_horse_id_from_url(url: &String) -> String {
     match Url::parse(url).and_then(|u| {
@@ -369,4 +285,12 @@ fn get_recent_results_td_from_race_7(td_elem: ElementRef) -> String {
         }
     }
     recent_result_vec.join("-")
+}
+
+// ウマニティのコードからレースのコードに変換
+pub fn get_common_race_code_from_umanity_code(umanity_code: &String) -> Option<String> {
+    match ((&umanity_code).get(0..4), (&umanity_code).get(8..16)) {
+        (Some(date), Some(race_code)) => Some(date.to_string() + race_code),
+        _ => None,
+    }
 }

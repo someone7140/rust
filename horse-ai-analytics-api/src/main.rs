@@ -36,6 +36,7 @@ mod service {
         pub mod external_info_common_service;
         pub mod external_info_main_service;
         pub mod netkeiba_service;
+        pub mod tospo_keiba_service;
         pub mod umanity_service;
     }
     pub mod jwt_service;
