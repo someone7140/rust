@@ -44,6 +44,8 @@ pub async fn get_race_info_from_umanity_url(
                     // 付加情報の取得
                     let recent_results_map =
                         umanity_service::get_recent_results_from_race_7(&race_code_umanity).await;
+                    let time_results_map =
+                        umanity_service::get_time_results_from_race_7(&race_code_umanity).await;
                     let netkeiba_horse_info_map =
                         netkeiba_service::get_netkeiba_info_from_umanity_code(&race_code_umanity)
                             .await;
@@ -54,6 +56,10 @@ pub async fn get_race_info_from_umanity_url(
                             (&recent_results_map).get(&(info.umanity_code))
                         {
                             mut_info.recent_results = recent_results.to_string()
+                        }
+                        // タイムを付加
+                        if let Some(time_results) = (&time_results_map).get(&(info.umanity_code)) {
+                            mut_info.time_results = time_results.to_string()
                         }
                         // netkeibaの情報を付加
                         if let Some(net_keiba_info) = (&netkeiba_horse_info_map).get(&(info.name)) {
@@ -100,6 +106,8 @@ pub async fn get_race_info_from_umanity_url(
                     }
                     let recent_results_map =
                         umanity_service::get_recent_results_from_race_7(&race_code_umanity).await;
+                    let time_results_map =
+                        umanity_service::get_time_results_from_race_7(&race_code_umanity).await;
                     let netkeiba_horse_info_map =
                         netkeiba_service::get_netkeiba_info_from_umanity_code(&race_code_umanity)
                             .await;
@@ -126,6 +134,10 @@ pub async fn get_race_info_from_umanity_url(
                             (&recent_results_map).get(&(info.umanity_code))
                         {
                             mut_info.recent_results = recent_results.to_string()
+                        }
+                        // タイムを付加
+                        if let Some(time_results) = (&time_results_map).get(&(info.umanity_code)) {
+                            mut_info.time_results = time_results.to_string()
                         }
                         // netkeibaの情報を付加
                         if let Some(net_keiba_info) = (&netkeiba_horse_info_map).get(&(info.name)) {
@@ -160,7 +172,7 @@ fn get_prompt_text_from_info_list(
 ) -> String {
     // 最初の文言
     let mut prompt = format!(
-        "{race_date_param}に行われる競馬のレース「{race_name_param}」で、以下のCSV形式の馬情報をもとに順位の見解だけ教えて\n\n",
+        "{race_date_param}に行われる競馬のレース「{race_name_param}」で、以下のCSV形式の馬情報をもとに順位の見解を簡潔に教えて\n\n",
         race_date_param = race_date_yyyy_mm_dd,
         race_name_param = race_name,
     );
@@ -214,6 +226,8 @@ fn get_prompt_text_from_info_list(
         column_value_vec[12] = info.recent_results;
         // 合計獲得賞金
         column_value_vec[13] = info.career_prize_money;
+        // 持ちタイム
+        column_value_vec[14] = info.time_results;
 
         record_list.push(column_value_vec.join(","))
     }

@@ -16,6 +16,7 @@ pub struct PromptHorseInfo {
     pub trainer: String,
     pub all_results: String,
     pub recent_results: String,
+    pub time_results: String,
     pub career_prize_money: String,
     pub father: String,
     pub mother: String,
@@ -38,6 +39,7 @@ impl PromptHorseInfo {
             trainer: HYPHEN.to_string(),
             all_results: HYPHEN.to_string(),
             recent_results: HYPHEN.to_string(),
+            time_results: HYPHEN.to_string(),
             career_prize_money: HYPHEN.to_string(),
             father: HYPHEN.to_string(),
             mother: HYPHEN.to_string(),
@@ -61,4 +63,5 @@ pub const CSV_COLUMN_MAP: phf::OrderedMap<&'static str, &'static str> = phf_orde
     "all_results" => "全成績",
     "recent_results" => "近走成績",
     "career_prize_money" => "合計獲得賞金",
+    "time_results" => "持ちタイム",
 };
