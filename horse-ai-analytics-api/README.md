@@ -1,2 +1,3 @@
 - ローカル実行は`cargo shuttle run`で起動する。VSCode でデバッグする時は起動後に`attach`する。
 - DB の migrate は`golang-migrate`を使用している。API のフォルダで`migrate -database "mongodb://localhost:27017/horse_ai_analytics_db_local" -path "./migrate/" up 1`の形式で migrate コマンドを実行。
+- `cargo shuttle deploy --allow-dirty`でデプロイ
