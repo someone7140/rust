@@ -1,0 +1,14 @@
+[
+  {
+    "createIndexes": "race_info",
+    "indexes": [
+      {
+        "key": {
+          "memo_list.title": 1
+        },
+        "name": "race_memo_title_index",
+        "background": true
+      }
+    ]
+  }
+]

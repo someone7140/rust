@@ -81,7 +81,7 @@ async fn sdl_export(schema: Data<ApiSchema>) -> Result<HttpResponse> {
 
 #[shuttle_runtime::main]
 async fn main(
-    #[shuttle_secrets::Secrets] secrets: SecretStore,
+    #[shuttle_runtime::Secrets] secrets: SecretStore,
 ) -> ShuttleActixWeb<impl FnOnce(&mut ServiceConfig) + Send + Clone + 'static> {
     // MongoDBクライアントの取得
     let mongo_client_option_result = match secrets.get("DB_CONNECT") {

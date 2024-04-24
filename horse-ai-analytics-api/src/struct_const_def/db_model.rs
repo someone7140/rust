@@ -34,4 +34,5 @@ pub struct RaceInfoMemo {
     pub title: Option<String>,
     pub contents: Option<String>,
     pub create_date: DateTime,
+    pub evaluation: Option<i32>,
 }

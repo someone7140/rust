@@ -37,6 +37,7 @@ pub struct RaceMemoInputObject {
     pub id: Option<String>,
     pub title: Option<String>,
     pub contents: Option<String>,
+    pub evaluation: Option<i32>,
 }
 
 #[derive(InputObject)]
@@ -88,4 +89,5 @@ pub struct RaceMemo {
     pub id: String,
     pub title: Option<String>,
     pub contents: Option<String>,
+    pub evaluation: Option<i32>,
 }

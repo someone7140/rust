@@ -33,6 +33,7 @@ pub async fn add_race_info(
             title: memo.title.clone(),
             contents: memo.contents.clone(),
             create_date: bson::DateTime::from_millis(Utc::now().timestamp_millis()),
+            evaluation: memo.evaluation,
         })
         .collect::<Vec<db_model::RaceInfoMemo>>();
     let race_info_model = db_model::RaceInfo {
@@ -57,7 +58,7 @@ pub async fn add_race_info(
     };
 }
 
-// レース情報の追加
+// レース情報の編集
 pub async fn edit_race_info(
     context: &mut &common_struct::CommonContext,
     account_user_id: String,
@@ -107,6 +108,7 @@ pub async fn edit_race_info(
                     } else {
                         now_date
                     },
+                    evaluation: memo.evaluation,
                 }
             } else {
                 db_model::RaceInfoMemo {
@@ -114,6 +116,7 @@ pub async fn edit_race_info(
                     title: memo.title.clone(),
                     contents: memo.contents.clone(),
                     create_date: now_date,
+                    evaluation: None,
                 }
             }
         })
@@ -271,6 +274,7 @@ pub async fn get_race_info_detail(
                 id: memo.id.clone(),
                 title: memo.title.clone(),
                 contents: memo.contents.clone(),
+                evaluation: memo.evaluation,
             })
             .collect(),
     };
