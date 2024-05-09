@@ -45,7 +45,7 @@
             "type": "lldb",
             "request": "attach",
             "name": "Attach to Shuttle",
-            "program": "${workspaceFolder}/target/debug/horse-ai-analytics-api"
+            "program": "${workspaceFolder}/target/debug/horse-ai-analytics-api-prod"
         }
     ]
 }

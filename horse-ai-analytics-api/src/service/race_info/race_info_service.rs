@@ -2,6 +2,8 @@ use async_graphql::*;
 use chrono::prelude::*;
 use futures_util::StreamExt;
 use mongodb::bson;
+use rust_decimal::prelude::*;
+use rust_decimal::Decimal;
 use uuid::Uuid;
 
 use crate::graphql_object::horse_enum::ErrorType;
@@ -279,4 +281,62 @@ pub async fn get_race_info_detail(
             .collect(),
     };
     Ok(Some(response))
+}
+
+// レース回答の評価値集計
+pub async fn get_race_evaluation(
+    context: &mut &common_struct::CommonContext,
+    account_user_id: String,
+    start_race_date_filter_opt: Option<String>,
+    end_race_date_filter_opt: Option<String>,
+) -> Result<Vec<horse_model::RaceEvaluationResult>> {
+    // 日付のparse
+    let utc_start_race_date = if let Some(start_race_date_filter) = start_race_date_filter_opt {
+        let start_race_date =
+            match common_service::get_utc_date_from_date_str(&start_race_date_filter) {
+                Ok(date) => Some(date),
+                Err(_) => None,
+            };
+        start_race_date
+    } else {
+        None
+    };
+    let utc_end_race_date = if let Some(end_race_date_filter) = end_race_date_filter_opt {
+        let end_race_date = match common_service::get_utc_date_from_date_str(&end_race_date_filter)
+        {
+            Ok(date) => Some(date),
+            Err(_) => None,
+        };
+        end_race_date
+    } else {
+        None
+    };
+
+    // DBでの集計結果の取得
+    let mut evaluation_vec: Vec<horse_model::RaceEvaluationResult> = Vec::new();
+    let results = race_info_repository::get_race_evaluation_aggregate(
+        context.mongo_db.clone(),
+        account_user_id.clone(),
+        utc_start_race_date,
+        utc_end_race_date,
+    )
+    .await;
+    match results {
+        Ok(aggregate_evaluate_vec) => {
+            for evaluate in aggregate_evaluate_vec {
+                evaluation_vec.push(horse_model::RaceEvaluationResult {
+                    title: evaluate.key.title,
+                    average: Decimal::from_f32(evaluate.avg).map(|d| d.round_dp(2).to_string()),
+                    median: Decimal::from_f32(evaluate.median).map(|d| d.round_dp(2).to_string()),
+                    count: evaluate.count,
+                })
+            }
+        }
+        Err(error) => {
+            return Err(Error::new(error.to_string())
+                .extend_with(|_, e| e.set("type", ErrorType::SystemError)))
+        }
+    }
+
+    Ok(evaluation_vec)
 }

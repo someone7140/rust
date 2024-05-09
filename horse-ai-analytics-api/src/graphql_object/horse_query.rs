@@ -68,4 +68,23 @@ impl Query {
         )
         .await;
     }
+
+    // レース回答の評価値集計
+    #[graphql(guard = "RoleGuard::new(Role::User)")]
+    async fn get_race_evaluation(
+        &self,
+        ctx: &Context<'_>,
+        start_race_date_filter: Option<String>,
+        end_race_date_filter: Option<String>,
+    ) -> Result<Vec<horse_model::RaceEvaluationResult>> {
+        let common_context = &mut ctx.data_unchecked::<common_struct::CommonContext>();
+        let auth_context = &mut ctx.data_unchecked::<common_struct::AuthContext>();
+        return race_info_service::get_race_evaluation(
+            common_context,
+            auth_context.clone().account_id,
+            start_race_date_filter,
+            end_race_date_filter,
+        )
+        .await;
+    }
 }

@@ -7,7 +7,7 @@ use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
 use mongodb::{options::ClientOptions, Client};
 use shuttle_actix_web::ShuttleActixWeb;
 use shuttle_runtime::Error;
-use shuttle_secrets::SecretStore;
+use shuttle_runtime::SecretStore;
 
 use graphql_object::{horse_enum, horse_mutation, horse_query};
 use service::{auth::account_user_service, common_service};

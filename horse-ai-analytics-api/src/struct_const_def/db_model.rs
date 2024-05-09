@@ -36,3 +36,17 @@ pub struct RaceInfoMemo {
     pub create_date: DateTime,
     pub evaluation: Option<i32>,
 }
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct RaceEvaluationAggregate {
+    #[serde(rename = "_id")]
+    pub key: RaceEvaluationAggregateKey,
+    pub avg: f32,
+    pub median: f32,
+    pub count: i32,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct RaceEvaluationAggregateKey {
+    pub title: String,
+}

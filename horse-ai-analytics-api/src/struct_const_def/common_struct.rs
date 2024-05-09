@@ -1,5 +1,5 @@
 use mongodb::Database;
-use shuttle_secrets::SecretStore;
+use shuttle_runtime::SecretStore;
 
 #[derive(Clone)]
 pub struct CommonContext {

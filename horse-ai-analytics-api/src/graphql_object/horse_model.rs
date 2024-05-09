@@ -1,4 +1,5 @@
 use async_graphql::*;
+use rust_decimal::Decimal;
 
 #[derive(SimpleObject)]
 pub struct AccountUserResponse {
@@ -90,4 +91,12 @@ pub struct RaceMemo {
     pub title: Option<String>,
     pub contents: Option<String>,
     pub evaluation: Option<i32>,
+}
+
+#[derive(SimpleObject)]
+pub struct RaceEvaluationResult {
+    pub title: String,
+    pub average: Option<String>,
+    pub median: Option<String>,
+    pub count: i32,
 }
