@@ -7,7 +7,7 @@ use rust_decimal::Decimal;
 use uuid::Uuid;
 
 use crate::graphql_object::horse_enum::ErrorType;
-use crate::graphql_object::horse_model::{self};
+use crate::graphql_object::horse_model;
 use crate::repository::race_info_repository;
 use crate::service::common_service;
 use crate::service::external_info::{
@@ -36,6 +36,7 @@ pub async fn add_race_info(
             contents: memo.contents.clone(),
             create_date: bson::DateTime::from_millis(Utc::now().timestamp_millis()),
             evaluation: memo.evaluation,
+            category_id: memo.category_id.clone(),
         })
         .collect::<Vec<db_model::RaceInfoMemo>>();
     let race_info_model = db_model::RaceInfo {
@@ -111,6 +112,7 @@ pub async fn edit_race_info(
                         now_date
                     },
                     evaluation: memo.evaluation,
+                    category_id: memo.category_id.clone(),
                 }
             } else {
                 db_model::RaceInfoMemo {
@@ -118,7 +120,8 @@ pub async fn edit_race_info(
                     title: memo.title.clone(),
                     contents: memo.contents.clone(),
                     create_date: now_date,
-                    evaluation: None,
+                    evaluation: memo.evaluation,
+                    category_id: memo.category_id.clone(),
                 }
             }
         })
@@ -277,6 +280,7 @@ pub async fn get_race_info_detail(
                 title: memo.title.clone(),
                 contents: memo.contents.clone(),
                 evaluation: memo.evaluation,
+                category_id: memo.category_id.clone(),
             })
             .collect(),
     };

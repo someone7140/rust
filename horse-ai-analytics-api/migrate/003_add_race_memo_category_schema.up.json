@@ -1,0 +1,14 @@
+[
+  {
+    "createIndexes": "race_memo_categories",
+    "indexes": [
+      {
+        "key": {
+          "account_user_id": 1
+        },
+        "name": "account_user_id_index",
+        "background": true
+      }
+    ]
+  }
+]

@@ -1,7 +1,7 @@
 use async_graphql::*;
 
 use crate::service::auth::{account_user_service, google_auth_service};
-use crate::service::race_info::race_info_service;
+use crate::service::race_info::{race_info_service, race_memo_category_service};
 use crate::struct_const_def::common_struct;
 
 use crate::graphql_object::horse_model;
@@ -115,6 +115,63 @@ impl Mutation {
             common_context,
             auth_context.clone().account_id,
             race_info_id,
+        )
+        .await;
+    }
+
+    // メモカテゴリーの追加
+    #[graphql(guard = "RoleGuard::new(Role::User)")]
+    async fn add_memo_category(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(validator(min_length = 1))] name: String,
+        #[graphql()] display_order: Option<i32>,
+    ) -> Result<bool> {
+        let common_context = &mut ctx.data_unchecked::<common_struct::CommonContext>();
+        let auth_context = &mut ctx.data_unchecked::<common_struct::AuthContext>();
+        return race_memo_category_service::add_race_memo_category(
+            common_context,
+            auth_context.clone().account_id,
+            name,
+            display_order,
+        )
+        .await;
+    }
+
+    // メモカテゴリーの編集
+    #[graphql(guard = "RoleGuard::new(Role::User)")]
+    async fn edit_memo_category(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(validator(min_length = 1))] id: String,
+        #[graphql(validator(min_length = 1))] name: String,
+        #[graphql()] display_order: Option<i32>,
+    ) -> Result<bool> {
+        let common_context = &mut ctx.data_unchecked::<common_struct::CommonContext>();
+        let auth_context = &mut ctx.data_unchecked::<common_struct::AuthContext>();
+        return race_memo_category_service::edit_race_memo_category(
+            common_context,
+            auth_context.clone().account_id,
+            id,
+            name,
+            display_order,
+        )
+        .await;
+    }
+
+    // メモカテゴリーの削除
+    #[graphql(guard = "RoleGuard::new(Role::User)")]
+    async fn delete_memo_category(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(validator(min_length = 1))] id: String,
+    ) -> Result<bool> {
+        let common_context = &mut ctx.data_unchecked::<common_struct::CommonContext>();
+        let auth_context = &mut ctx.data_unchecked::<common_struct::AuthContext>();
+        return race_memo_category_service::delete_race_memo_category(
+            common_context,
+            auth_context.clone().account_id,
+            id,
         )
         .await;
     }

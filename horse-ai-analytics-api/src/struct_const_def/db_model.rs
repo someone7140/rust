@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 pub const ACCOUNT_USERS_COLLECTION: &str = "account_users";
 pub const RACE_INFO_COLLECTION: &str = "race_info";
+pub const RACE_MEMO_CATEGORY_COLLECTION: &str = "race_memo_categories";
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct AccountUsers {
@@ -35,6 +36,7 @@ pub struct RaceInfoMemo {
     pub contents: Option<String>,
     pub create_date: DateTime,
     pub evaluation: Option<i32>,
+    pub category_id: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -49,4 +51,13 @@ pub struct RaceEvaluationAggregate {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct RaceEvaluationAggregateKey {
     pub title: String,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct RaceMemoCategory {
+    #[serde(rename = "_id")]
+    pub id: String,
+    pub account_user_id: String,
+    pub name: String,
+    pub display_order: Option<i32>,
 }

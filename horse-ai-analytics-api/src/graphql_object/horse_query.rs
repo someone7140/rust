@@ -1,7 +1,7 @@
 use async_graphql::*;
 
 use crate::service::external_info::external_info_main_service;
-use crate::service::race_info::race_info_service;
+use crate::service::race_info::{race_info_service, race_memo_category_service};
 use crate::{service::auth::account_user_service, struct_const_def::common_struct};
 
 use crate::graphql_object::horse_model;
@@ -84,6 +84,23 @@ impl Query {
             auth_context.clone().account_id,
             start_race_date_filter,
             end_race_date_filter,
+        )
+        .await;
+    }
+
+    // メモカテゴリーの一覧
+    #[graphql(guard = "RoleGuard::new(Role::User)")]
+    async fn get_race_memo_category_list(
+        &self,
+        ctx: &Context<'_>,
+        id_filter: Option<String>,
+    ) -> Result<Vec<horse_model::RaceMemoCategory>> {
+        let common_context = &mut ctx.data_unchecked::<common_struct::CommonContext>();
+        let auth_context = &mut ctx.data_unchecked::<common_struct::AuthContext>();
+        return race_memo_category_service::get_race_memo_category_list_by_account(
+            common_context,
+            auth_context.clone().account_id,
+            id_filter,
         )
         .await;
     }

@@ -24,6 +24,7 @@ mod graphql_object {
 mod repository {
     pub mod account_users_repository;
     pub mod race_info_repository;
+    pub mod race_memo_category_repository;
 }
 
 mod service {
@@ -42,6 +43,7 @@ mod service {
     pub mod jwt_service;
     pub mod race_info {
         pub mod race_info_service;
+        pub mod race_memo_category_service;
     }
 }
 

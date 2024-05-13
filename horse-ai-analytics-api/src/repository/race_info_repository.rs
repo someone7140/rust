@@ -3,9 +3,9 @@ use async_graphql::futures_util::TryStreamExt;
 use chrono::DateTime;
 use chrono_tz::Tz;
 use mongodb::{
-    bson::{self, doc},
+    bson::{self, doc, Bson},
     error::Error,
-    options::FindOptions,
+    options::{FindOptions, UpdateOptions},
     results::{DeleteResult, InsertOneResult, UpdateResult},
     Cursor, Database,
 };
@@ -168,4 +168,28 @@ pub async fn get_race_evaluation_aggregate(
     }
 
     return Ok(results);
+}
+
+pub async fn detach_race_memo_category(
+    db: Database,
+    account_user_id: String,
+    race_memo_category_id: String,
+) -> Result<UpdateResult, Error> {
+    let collection = db.collection::<db_model::RaceInfo>(db_model::RACE_INFO_COLLECTION);
+    // ドキュメントのフィルター
+    let filter_doc = doc! { "$and": [
+        doc! { "account_user_id": account_user_id.clone()},
+    ]};
+    // 更新内容
+    let set_doc = doc! {
+        "$set": doc! { "memo_list.$[element].category_id": Bson::Null }
+    };
+    // オプションに配列のフィルターをセット
+    let update_options = UpdateOptions::builder()
+        .array_filters(vec![doc! { "element.category_id": race_memo_category_id }])
+        .build();
+
+    return collection
+        .update_many(filter_doc, set_doc, update_options)
+        .await;
 }
