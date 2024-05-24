@@ -317,30 +317,64 @@ pub async fn get_race_evaluation(
     };
 
     // DBでの集計結果の取得
-    let mut evaluation_vec: Vec<horse_model::RaceEvaluationResult> = Vec::new();
-    let results = race_info_repository::get_race_evaluation_aggregate(
+    let total_results = race_info_repository::get_race_evaluation_aggregate(
         context.mongo_db.clone(),
         account_user_id.clone(),
         utc_start_race_date,
         utc_end_race_date,
+        false,
     )
     .await;
-    match results {
-        Ok(aggregate_evaluate_vec) => {
-            for evaluate in aggregate_evaluate_vec {
+    let category_results = race_info_repository::get_race_evaluation_aggregate(
+        context.mongo_db.clone(),
+        account_user_id.clone(),
+        utc_start_race_date,
+        utc_end_race_date,
+        true,
+    )
+    .await;
+
+    let mut evaluation_vec: Vec<horse_model::RaceEvaluationResult> = Vec::new();
+    match (total_results, category_results) {
+        (Ok(total_evaluate_vec), Ok(category_evaluate_vec)) => {
+            for evaluate in total_evaluate_vec {
+                // トータルの集計結果のタイトルをキーにカテゴリーの集計結果を取得
+                let category_evaluation_list = category_evaluate_vec
+                    .iter()
+                    .filter(|category_evaluation| {
+                        category_evaluation.key.title == evaluate.clone().key.title
+                            && category_evaluation.key.category_id.is_some()
+                    })
+                    .map(|category_evaluation| horse_model::CategoryEvaluation {
+                        category_id: category_evaluation.clone().key.category_id.unwrap(),
+                        average: get_round_evaluate_value(category_evaluation.avg),
+                        median: get_round_evaluate_value(category_evaluation.median),
+                        count: category_evaluation.count,
+                    })
+                    .collect::<Vec<horse_model::CategoryEvaluation>>();
                 evaluation_vec.push(horse_model::RaceEvaluationResult {
                     title: evaluate.key.title,
-                    average: Decimal::from_f32(evaluate.avg).map(|d| d.round_dp(2).to_string()),
-                    median: Decimal::from_f32(evaluate.median).map(|d| d.round_dp(2).to_string()),
+                    average: get_round_evaluate_value(evaluate.avg),
+                    median: get_round_evaluate_value(evaluate.median),
                     count: evaluate.count,
-                })
+                    category_evaluation_list,
+                });
             }
         }
-        Err(error) => {
-            return Err(Error::new(error.to_string())
+        (Err(e1), Err(e2)) => {
+            return Err(Error::new(e1.to_string())
+                .extend_with(|_, e| e.set("type", ErrorType::SystemError)))
+        }
+        (_, _) => {
+            return Err(Error::new("Error aggregate evaluation")
                 .extend_with(|_, e| e.set("type", ErrorType::SystemError)))
         }
     }
 
     Ok(evaluation_vec)
+}
+
+// 評価値の四捨五入結果を取得
+fn get_round_evaluate_value(f_value: f32) -> Option<String> {
+    Decimal::from_f32(f_value).map(|d| d.round_dp(2).to_string())
 }

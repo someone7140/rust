@@ -116,18 +116,39 @@ pub async fn get_race_evaluation_aggregate(
     account_user_id: String,
     start_race_date_time_opt: Option<DateTime<Tz>>,
     end_race_date_time_opt: Option<DateTime<Tz>>,
+    is_category_grouping: bool,
 ) -> Result<Vec<db_model::RaceEvaluationAggregate>, Error> {
     let collection = db.collection::<db_model::RaceInfo>(db_model::RACE_INFO_COLLECTION);
 
+    // カテゴリーでの集計有無でキーを変える
+    let group_key = if is_category_grouping {
+        doc! { "title": "$memo_list_filtered.title", "category_id": "$memo_list_filtered.category_id" }
+    } else {
+        doc! { "title": "$memo_list_filtered.title" }
+    };
+
+    let mut array_filter_list = vec![
+        doc! { "$ne": ["$$memo.evaluation", Bson::Null] },
+        doc! { "$ne": ["$$memo.title", Bson::Null] },
+    ];
+    // カテゴリーでの集計有無で配列の絞り込みを変える
+    if is_category_grouping {
+        array_filter_list.push(doc! { "$ne": ["$$memo.category_id", Bson::Null] });
+    }
+
     let mut pipeline = vec![
         doc! { "$match": doc! { "account_user_id": account_user_id.clone() } },
-        doc! { "$unwind": "$memo_list" },
-        doc! { "$match": doc! { "memo_list.evaluation": { "$exists": true} } },
-        doc! { "$match": doc! { "memo_list.title": { "$exists": true} } },
+        doc! { "$addFields": doc! { "memo_list_filtered": {
+            "$filter": doc! {
+                "input": "$memo_list",
+                "as": "memo",
+                "cond": [ doc! { "$and": array_filter_list }, true, false ]
+        } }} },
+        doc! { "$unwind": "$memo_list_filtered" },
         doc! { "$group": doc! {
-            "_id": doc! { "title": "$memo_list.title" },
-            "avg": doc! { "$avg": "$memo_list.evaluation" },
-            "median": doc! { "$median": doc! {  "input":"$memo_list.evaluation", "method": "approximate" } },
+            "_id": group_key,
+            "avg": doc! { "$avg": "$memo_list_filtered.evaluation" },
+            "median": doc! { "$median": doc! {  "input":"$memo_list_filtered.evaluation", "method": "approximate" } },
             "count": doc! { "$sum": 1 },
         } },
         doc! { "$sort": doc! { "avg": -1, "median": -1 } },

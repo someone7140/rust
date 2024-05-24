@@ -51,6 +51,7 @@ pub struct RaceEvaluationAggregate {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct RaceEvaluationAggregateKey {
     pub title: String,
+    pub category_id: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]

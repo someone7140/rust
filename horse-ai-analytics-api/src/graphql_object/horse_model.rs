@@ -95,11 +95,20 @@ pub struct RaceMemo {
 }
 
 #[derive(SimpleObject)]
+pub struct CategoryEvaluation {
+    pub category_id: String,
+    pub average: Option<String>,
+    pub median: Option<String>,
+    pub count: i32,
+}
+
+#[derive(SimpleObject)]
 pub struct RaceEvaluationResult {
     pub title: String,
     pub average: Option<String>,
     pub median: Option<String>,
     pub count: i32,
+    pub category_evaluation_list: Vec<CategoryEvaluation>,
 }
 
 #[derive(SimpleObject)]

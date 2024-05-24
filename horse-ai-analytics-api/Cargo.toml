@@ -5,9 +5,9 @@ version = "0.1.0"
 
 [dependencies]
 actix-cors = "0.7.0"
-actix-web = "4.5.1"
-async-graphql = {version = "7.0.3", features = ["decimal"]}
-async-graphql-actix-web = "7.0.3"
+actix-web = "4.6.0"
+async-graphql = {version = "7.0.5", features = ["decimal"]}
+async-graphql-actix-web = "7.0.5"
 chrono = "0.4.37"
 chrono-tz = "0.8.6"
 google-oauth = "1.10.2"
