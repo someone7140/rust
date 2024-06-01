@@ -117,3 +117,27 @@ pub struct RaceMemoCategory {
     pub name: String,
     pub display_order: Option<i32>,
 }
+
+#[derive(InputObject)]
+pub struct VoteResultInputObject {
+    pub id: Option<String>,
+    #[graphql(validator(min_length = 1))]
+    pub race_date: String,
+    pub vote_race_list: Vec<VoteRaceInputObject>,
+}
+
+#[derive(InputObject)]
+pub struct VoteRaceInputObject {
+    #[graphql(validator(min_length = 1))]
+    pub race_id: String,
+    pub vote_race_contents: Vec<VoteRaceContentInputObject>,
+}
+
+#[derive(InputObject)]
+pub struct VoteRaceContentInputObject {
+    pub id: Option<String>,
+    pub most_priority_memo_id: Option<String>,
+    pub contents: Option<String>,
+    pub bet_amount: i32,
+    pub return_amount: i32,
+}

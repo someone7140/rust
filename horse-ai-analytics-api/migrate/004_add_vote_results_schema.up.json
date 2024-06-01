@@ -1,0 +1,21 @@
+[
+  {
+    "createIndexes": "vote_results",
+    "indexes": [
+      {
+        "key": {
+          "account_user_id": 1
+        },
+        "name": "account_user_id_index",
+        "background": true
+      },
+      {
+        "key": {
+          "race_date": 1
+        },
+        "name": "race_date_index",
+        "background": true
+      }
+    ]
+  }
+]

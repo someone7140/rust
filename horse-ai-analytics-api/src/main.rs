@@ -25,6 +25,7 @@ mod repository {
     pub mod account_users_repository;
     pub mod race_info_repository;
     pub mod race_memo_category_repository;
+    pub mod vote_result_repository;
 }
 
 mod service {
@@ -44,6 +45,9 @@ mod service {
     pub mod race_info {
         pub mod race_info_service;
         pub mod race_memo_category_service;
+    }
+    pub mod vote_result {
+        pub mod vote_result_service;
     }
 }
 

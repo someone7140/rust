@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub const ACCOUNT_USERS_COLLECTION: &str = "account_users";
 pub const RACE_INFO_COLLECTION: &str = "race_info";
 pub const RACE_MEMO_CATEGORY_COLLECTION: &str = "race_memo_categories";
+pub const VOTE_RESULTS_COLLECTION: &str = "vote_results";
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct AccountUsers {
@@ -61,4 +62,29 @@ pub struct RaceMemoCategory {
     pub account_user_id: String,
     pub name: String,
     pub display_order: Option<i32>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct VoteResult {
+    #[serde(rename = "_id")]
+    pub id: String,
+    pub account_user_id: String,
+    pub race_date: DateTime,
+    pub vote_race_list: Vec<VoteRace>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct VoteRace {
+    pub race_id: String,
+    pub vote_race_contents: Vec<VoteRaceContent>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct VoteRaceContent {
+    #[serde(rename = "_id")]
+    pub id: String,
+    pub most_priority_memo_id: Option<String>,
+    pub contents: Option<String>,
+    pub bet_amount: i32,
+    pub return_amount: i32,
 }
