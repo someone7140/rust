@@ -268,9 +268,10 @@ pub async fn get_horse_info_from_race_8_1(
             .trim()
             .to_string();
         // 所属を取得
-        horse_info.belonging = (td_list[9].text().collect::<Vec<_>>()[0])
-            .trim()
-            .to_string();
+        let belonging_area = td_list[9].text().collect::<Vec<_>>();
+        if belonging_area.len() > 0 {
+            horse_info.belonging = belonging_area[0].trim().to_string();
+        }
 
         if horse_info.name != prompt_def::HYPHEN {
             horse_info_list.push(horse_info)
