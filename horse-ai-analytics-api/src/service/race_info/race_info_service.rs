@@ -68,12 +68,19 @@ pub async fn edit_race_info(
     input: horse_model::EditRaceInfoInputObject,
 ) -> Result<bool> {
     // 登録してあるデータを取得
-    let registered_race_info_opt = race_info_repository::get_race_info_detail(
+    let mut race_info_details = race_info_repository::get_race_info_details(
         context.mongo_db.clone(),
         account_user_id.clone(),
-        input.id.clone(),
+        Some(input.id.clone()),
+        None,
     )
     .await;
+    let mut registered_race_info_opt = None;
+    if let Some(doc) = race_info_details.next().await {
+        if let Ok(race_info) = doc {
+            registered_race_info_opt = Some(race_info)
+        }
+    }
     let registered_race_info = match registered_race_info_opt {
         Some(race_info) => race_info,
         None => {
@@ -227,16 +234,22 @@ pub async fn get_race_info_list_by_account(
 pub async fn get_race_info_detail(
     context: &mut &common_struct::CommonContext,
     account_user_id: String,
-    race_info_id: String,
+    race_info_id_opt: Option<String>,
 ) -> Result<Option<horse_model::RaceInfoDetail>> {
     // 詳細を取得クエリ実行
-    let race_info_opt = race_info_repository::get_race_info_detail(
+    let mut race_info_details = race_info_repository::get_race_info_details(
         context.mongo_db.clone(),
         account_user_id.clone(),
-        race_info_id.clone(),
+        race_info_id_opt,
+        None,
     )
     .await;
-
+    let mut race_info_opt = None;
+    if let Some(doc) = race_info_details.next().await {
+        if let Ok(race_info) = doc {
+            race_info_opt = Some(race_info)
+        }
+    }
     let race_info = match race_info_opt {
         Some(race_info) => race_info,
         None => return Ok(None),
@@ -260,31 +273,32 @@ pub async fn get_race_info_detail(
         }
     }
 
-    let response = horse_model::RaceInfoDetail {
-        id: race_info.id,
-        race_name: race_info.race_name,
-        analytics_url: race_info.analytics_url,
-        race_date: match common_service::get_jst_date_from_timestamp_millis(
-            race_info.race_date.timestamp_millis(),
-        ) {
-            Ok(jst_date) => jst_date.format("%Y/%m/%d").to_string(),
-            _ => "".to_string(),
-        },
-        prompt: race_info.prompt,
-        odds: odds_info,
-        memo_list: race_info
-            .memo_list
-            .iter()
-            .map(|memo| horse_model::RaceMemo {
-                id: memo.id.clone(),
-                title: memo.title.clone(),
-                contents: memo.contents.clone(),
-                evaluation: memo.evaluation,
-                category_id: memo.category_id.clone(),
-            })
-            .collect(),
-    };
-    Ok(Some(response))
+    Ok(Some(get_detail_response(race_info, odds_info)))
+}
+
+// 日付指定してレース情報の詳細取得
+pub async fn get_race_info_details_by_date(
+    context: &mut &common_struct::CommonContext,
+    account_user_id: String,
+    race_info_date: String,
+) -> Result<Vec<horse_model::RaceInfoDetail>> {
+    // 詳細を取得クエリ実行
+    let mut race_info_details = race_info_repository::get_race_info_details(
+        context.mongo_db.clone(),
+        account_user_id.clone(),
+        None,
+        Some(race_info_date),
+    )
+    .await;
+
+    let mut result_vec: Vec<horse_model::RaceInfoDetail> = Vec::new();
+    while let Some(doc) = race_info_details.next().await {
+        if let Ok(race_info) = doc {
+            result_vec.push(get_detail_response(race_info, None))
+        }
+    }
+
+    Ok(result_vec)
 }
 
 // レース回答の評価値集計
@@ -361,7 +375,7 @@ pub async fn get_race_evaluation(
                 });
             }
         }
-        (Err(e1), Err(e2)) => {
+        (Err(e1), Err(_)) => {
             return Err(Error::new(e1.to_string())
                 .extend_with(|_, e| e.set("type", ErrorType::SystemError)))
         }
@@ -377,4 +391,35 @@ pub async fn get_race_evaluation(
 // 評価値の四捨五入結果を取得
 fn get_round_evaluate_value(f_value: f32) -> Option<String> {
     Decimal::from_f32(f_value).map(|d| d.round_dp(2).to_string())
+}
+
+// 詳細情報のレスポンスを取得
+fn get_detail_response(
+    race_info: db_model::RaceInfo,
+    odds_info: Option<horse_model::OddsInfoResponse>,
+) -> horse_model::RaceInfoDetail {
+    return horse_model::RaceInfoDetail {
+        id: race_info.id,
+        race_name: race_info.race_name,
+        analytics_url: race_info.analytics_url,
+        race_date: match common_service::get_jst_date_from_timestamp_millis(
+            race_info.race_date.timestamp_millis(),
+        ) {
+            Ok(jst_date) => jst_date.format("%Y/%m/%d").to_string(),
+            _ => "".to_string(),
+        },
+        prompt: race_info.prompt,
+        odds: odds_info,
+        memo_list: race_info
+            .memo_list
+            .iter()
+            .map(|memo| horse_model::RaceMemo {
+                id: memo.id.clone(),
+                title: memo.title.clone(),
+                contents: memo.contents.clone(),
+                evaluation: memo.evaluation,
+                category_id: memo.category_id.clone(),
+            })
+            .collect(),
+    };
 }

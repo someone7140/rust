@@ -54,7 +54,7 @@ pub async fn get_race_info_list(
     account_user_id: String,
     start_race_date_opt: Option<String>,
     end_race_date_str_opt: Option<String>,
-    keyowrd_opt: Option<String>,
+    keyword_opt: Option<String>,
     limit: i64,
 ) -> Cursor<db_model::RaceInfo> {
     let collection = db.collection::<db_model::RaceInfo>(db_model::RACE_INFO_COLLECTION);
@@ -84,7 +84,7 @@ pub async fn get_race_info_list(
         }
     };
     // キーワード
-    if let Some(keyword) = keyowrd_opt {
+    if let Some(keyword) = keyword_opt {
         filter_doc.insert("race_name", doc! { "$regex": keyword, "$options": "i"});
     };
     let find_options = FindOptions::builder()
@@ -96,18 +96,27 @@ pub async fn get_race_info_list(
     return result.unwrap();
 }
 
-pub async fn get_race_info_detail(
+pub async fn get_race_info_details(
     db: Database,
     account_user_id: String,
-    race_info_id: String,
-) -> Option<db_model::RaceInfo> {
+    race_info_id_opt: Option<String>,
+    race_date_opt: Option<String>,
+) -> Cursor<db_model::RaceInfo> {
     let collection = db.collection::<db_model::RaceInfo>(db_model::RACE_INFO_COLLECTION);
     // フィルター
-    let filter_doc = doc! { "$and": [
-        doc! { "account_user_id": account_user_id.clone()},
-        doc! { "_id": race_info_id.clone()},
-    ]};
-    let result = collection.find_one(filter_doc, None).await;
+    let mut filter_docs = vec![doc! { "account_user_id": account_user_id.clone()}];
+    if let Some(race_info_id) = race_info_id_opt {
+        filter_docs.push(doc! { "_id": race_info_id })
+    }
+    if let Some(race_date_str) = race_date_opt {
+        if let Ok(race_date_utc) = common_service::get_utc_date_from_date_str(&race_date_str) {
+            filter_docs.push(
+                doc! { "race_date": bson::DateTime::from_millis(race_date_utc.timestamp_millis()) },
+            );
+        }
+    };
+
+    let result = collection.find(doc! { "$and": filter_docs }, None).await;
     return result.unwrap();
 }
 

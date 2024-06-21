@@ -64,7 +64,24 @@ impl Query {
         return race_info_service::get_race_info_detail(
             common_context,
             auth_context.clone().account_id,
-            race_info_id,
+            Some(race_info_id),
+        )
+        .await;
+    }
+
+    // 日付指定のレース情報の詳細
+    #[graphql(guard = "RoleGuard::new(Role::User)")]
+    async fn get_race_info_details_by_date(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(validator(min_length = 1))] race_date: String,
+    ) -> Result<Vec<horse_model::RaceInfoDetail>> {
+        let common_context = &mut ctx.data_unchecked::<common_struct::CommonContext>();
+        let auth_context = &mut ctx.data_unchecked::<common_struct::AuthContext>();
+        return race_info_service::get_race_info_details_by_date(
+            common_context,
+            auth_context.clone().account_id,
+            race_date,
         )
         .await;
     }
