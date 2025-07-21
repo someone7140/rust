@@ -1,0 +1,2 @@
+- ローカル実行は`cargo shuttle run`で起動する。VSCode でデバッグする時は起動後に`attach`する。
+- migrate は`sea-orm-cli migrate up -u "postgres://user:postgres@localhost:5432/novel-management-db-local"`のような感じ。

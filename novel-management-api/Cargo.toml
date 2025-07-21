@@ -1,0 +1,35 @@
+[package]
+edition = "2021"
+name = "novel-management-api"
+version = "0.1.0"
+
+[workspace]
+members = [".", "entity", "migration"]
+
+[dependencies]
+async-graphql = "7.0.17"
+async-graphql-axum = "7.0.17"
+axum = "0.8"
+sea-orm = {version = "1.1.13", features = ["sqlx-postgres", "runtime-tokio-native-tls", "macros"]}
+shuttle-axum = "0.56.0"
+shuttle-runtime = "0.56.0"
+tokio = "1.28.2"
+thiserror = "2"
+reqwest = { version = "0.12", features = ["json"] }
+google-oauth = "1.11.3"
+oauth2 = "5.0.0"
+serde = {version = "1.0.219", features = ["derive"]}
+chrono = "0.4.41"
+chrono-tz = "0.10.4"
+jsonwebtoken = "9"
+entity = { path = "./entity" }
+
+[dependencies.uuid]
+version = "1.17.0"
+features = [
+    "v7",
+]
+
+[profile.dev]
+debug = true
+opt-level = 0
