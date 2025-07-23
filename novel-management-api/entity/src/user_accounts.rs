@@ -9,6 +9,7 @@ pub struct Model {
     pub user_setting_id: String,
     #[sea_orm(unique)]
     pub gmail: String,
+    pub name: String,
     #[sea_orm(nullable)]
     pub image_url: Option<String>,
     pub created_at: DateTimeWithTimeZone,

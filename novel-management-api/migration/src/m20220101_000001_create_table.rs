@@ -25,6 +25,12 @@ impl MigrationTrait for Migration {
                             .unique_key(),
                     )
                     .col(
+                        ColumnDef::new(user_accounts::Column::Name)
+                            .string()
+                            .not_null()
+                            .unique_key(),
+                    )
+                    .col(
                         ColumnDef::new(user_accounts::Column::Gmail)
                             .string()
                             .not_null()

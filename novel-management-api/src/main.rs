@@ -1,17 +1,22 @@
 use async_graphql::{EmptySubscription, Schema};
 use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
-use axum::{extract::State, routing::post, Router};
+use axum::{extract::State, middleware, routing::post, Extension, Router};
 use sea_orm::{Database, DatabaseConnection};
 use shuttle_runtime::{Error, SecretStore};
 
 use crate::{
     controller::{graphql_mutation::MutationRoot, graphql_query::QueryRoot},
-    model::common::context_info::CommonContext,
+    custom_middleware::auth_middleware::jwt_auth_middleware,
+    model::common::context_info::{AuthContext, CommonContext},
 };
 
 mod controller {
     pub mod graphql_mutation;
     pub mod graphql_query;
+}
+
+mod custom_middleware {
+    pub mod auth_middleware;
 }
 
 mod model {
@@ -20,6 +25,7 @@ mod model {
     }
     pub mod graphql {
         pub mod graphql_error;
+        pub mod graphql_guard;
         pub mod graphql_user_account;
     }
 }
@@ -56,14 +62,16 @@ async fn create_database_connection(
 
 // graphqlの設定
 async fn graphql_handler(
+    Extension(auth_context_opt): Extension<Option<AuthContext>>,
     State(context_state): State<CommonContext>,
     req: GraphQLRequest,
 ) -> GraphQLResponse {
-    let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
-        .data(context_state) // StateをGraphQLのcontextに追加
-        .finish();
+    let mut schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription).data(context_state);
+    if let Some(auth_context) = auth_context_opt {
+        schema = schema.data(auth_context);
+    }
 
-    schema.execute(req.into_inner()).await.into()
+    schema.finish().execute(req.into_inner()).await.into()
 }
 
 #[shuttle_runtime::main]
@@ -78,13 +86,17 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> shuttle_
     };
 
     // secret情報とDBをstateに格納
-    let context_state = CommonContext {
+    let context_state: CommonContext = CommonContext {
         secrets: secret_store.clone(),
         db_connect: db_connect,
     };
 
     let app = Router::new()
         .route("/graphql", post(graphql_handler))
+        .layer(middleware::from_fn_with_state(
+            context_state.clone(),
+            jwt_auth_middleware,
+        ))
         .with_state(context_state);
     Ok(app.into())
 }
