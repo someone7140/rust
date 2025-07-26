@@ -67,3 +67,20 @@ pub async fn update_user_account_image_url(
         Err(error) => Some(error),
     }
 }
+
+// ユーザーの入力情報を更新
+pub async fn update_user_account_input_info(
+    db: &DatabaseConnection,
+    user_account: user_accounts::ActiveModel,
+    user_setting_id: String,
+    name: String,
+) -> Option<DbErr> {
+    let mut update_user_account = user_account;
+    update_user_account.user_setting_id = Set(user_setting_id);
+    update_user_account.name = Set(name);
+    let result = update_user_account.update(db).await;
+    match result {
+        Ok(_) => None,
+        Err(error) => Some(error),
+    }
+}

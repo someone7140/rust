@@ -2,8 +2,9 @@ use async_graphql::*;
 
 use crate::model::common::context_info::{AuthContext, CommonContext};
 use crate::model::graphql::graphql_guard::{Role, RoleGuard};
-use crate::model::graphql::graphql_user_account;
+use crate::model::graphql::{graphql_novel, graphql_user_account};
 use crate::service::auth::{google_auth_service, user_account_service};
+use crate::service::novel::novel_service;
 
 pub struct QueryRoot;
 
@@ -35,5 +36,14 @@ impl QueryRoot {
 
         user_account_service::get_user_account_by_id(context, auth_context.clone().user_account_id)
             .await
+    }
+
+    // 小説の一覧を取得
+    #[graphql(guard = "RoleGuard::new(Role::User)")]
+    async fn get_my_novels(&self, ctx: &Context<'_>) -> Result<Vec<graphql_novel::NovelResponse>> {
+        let context = &mut ctx.data_unchecked::<CommonContext>();
+        let auth_context = &mut ctx.data_unchecked::<AuthContext>();
+
+        novel_service::get_my_novels(context, auth_context.clone().user_account_id).await
     }
 }

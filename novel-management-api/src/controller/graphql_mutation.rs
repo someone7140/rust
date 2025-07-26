@@ -1,8 +1,10 @@
 use async_graphql::*;
 
-use crate::model::common::context_info::CommonContext;
+use crate::model::common::context_info::{AuthContext, CommonContext};
+use crate::model::graphql::graphql_guard::{Role, RoleGuard};
 use crate::model::graphql::graphql_user_account;
 use crate::service::auth::{google_auth_service, user_account_service};
+use crate::service::novel::novel_service;
 
 pub struct MutationRoot;
 
@@ -40,5 +42,65 @@ impl MutationRoot {
             };
 
         user_account_service::get_user_account_by_google_token(context, google_access_token).await
+    }
+
+    // ユーザー情報の編集
+    #[graphql(guard = "RoleGuard::new(Role::User)")]
+    async fn edit_user_account(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(validator(min_length = 1))] user_setting_id: String,
+        #[graphql(validator(min_length = 1))] name: String,
+    ) -> Result<graphql_user_account::UserAccountResponse> {
+        let context = &mut ctx.data_unchecked::<CommonContext>();
+        let auth_context = &mut ctx.data_unchecked::<AuthContext>();
+
+        user_account_service::edit_user_account(
+            context,
+            auth_context.clone().user_account_id,
+            user_setting_id,
+            name,
+        )
+        .await
+    }
+
+    // 小説の作成
+    #[graphql(guard = "RoleGuard::new(Role::User)")]
+    async fn add_novel(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(validator(min_length = 1))] title: String,
+    ) -> Result<bool> {
+        let context = &mut ctx.data_unchecked::<CommonContext>();
+        let auth_context = &mut ctx.data_unchecked::<AuthContext>();
+
+        novel_service::add_novel(context, auth_context.clone().user_account_id, title).await
+    }
+
+    // 小説の編集
+    #[graphql(guard = "RoleGuard::new(Role::User)")]
+    async fn edit_novel(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(validator(min_length = 1))] id: String,
+        #[graphql(validator(min_length = 1))] title: String,
+    ) -> Result<bool> {
+        let context = &mut ctx.data_unchecked::<CommonContext>();
+        let auth_context = &mut ctx.data_unchecked::<AuthContext>();
+
+        novel_service::edit_novel(context, auth_context.clone().user_account_id, id, title).await
+    }
+
+    // 小説の削除
+    #[graphql(guard = "RoleGuard::new(Role::User)")]
+    async fn delete_novel(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(validator(min_length = 1))] id: String,
+    ) -> Result<bool> {
+        let context = &mut ctx.data_unchecked::<CommonContext>();
+        let auth_context = &mut ctx.data_unchecked::<AuthContext>();
+
+        novel_service::delete_novel(context, auth_context.clone().user_account_id, id).await
     }
 }

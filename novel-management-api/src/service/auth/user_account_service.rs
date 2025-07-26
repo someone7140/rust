@@ -204,3 +204,63 @@ pub async fn add_user_account_by_gmail(
         image_url: image_url.cloned(),
     })
 }
+
+// ユーザーの情報編集を行う
+pub async fn edit_user_account(
+    context: &mut &context_info::CommonContext,
+    user_account_id: String,
+    user_setting_id: String,
+    name: String,
+) -> Result<graphql_user_account::UserAccountResponse> {
+    let find_result =
+        user_account_repository::get_user_account_by_id(&context.db_connect, user_account_id).await;
+    let user_account = match find_result {
+        Some(user) => user,
+        None => return Err(AppError::NotFoundError("Can not find user".to_string()).extend()),
+    };
+
+    // user_setting_idが変更されていたらすでに登録されているものかチェック
+    if user_account.user_setting_id.clone() != user_setting_id.clone() {
+        let find_result_user_setting_id =
+            user_account_repository::get_user_account_by_user_setting_id(
+                &context.db_connect,
+                user_setting_id.clone(),
+            )
+            .await;
+        if find_result_user_setting_id.is_some() {
+            return Err(
+                AppError::ForbiddenError("Already registered user_setting".to_string()).extend(),
+            );
+        }
+    }
+
+    // DB更新
+    let edit_error = user_account_repository::update_user_account_input_info(
+        &context.db_connect,
+        user_account.clone().into(),
+        user_setting_id.clone(),
+        name.clone(),
+    )
+    .await;
+    if edit_error.is_some() {
+        return Err(AppError::SystemError(edit_error.unwrap().to_string()).extend());
+    }
+
+    // ユーザーのIDからトークンを生成
+    let jwt_secret = match context.secrets.get("JWT_SECRET") {
+        Some(jwt_secret) => jwt_secret,
+        None => return Err(AppError::SystemError("Get jwt config Error".to_string()).extend()),
+    };
+    let auth_token = jwt_service::make_jwt(
+        &jwt_secret,
+        HashMap::from([(JWT_USER_ACCOUNT_ID_KEY.to_string(), user_account.id)]),
+        jwt_service::STORE_TOKEN_EXP_HOURS,
+    );
+
+    Ok(graphql_user_account::UserAccountResponse {
+        token: auth_token,
+        user_setting_id: user_setting_id,
+        name: name,
+        image_url: user_account.image_url,
+    })
+}

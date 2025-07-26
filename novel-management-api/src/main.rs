@@ -26,11 +26,13 @@ mod model {
     pub mod graphql {
         pub mod graphql_error;
         pub mod graphql_guard;
+        pub mod graphql_novel;
         pub mod graphql_user_account;
     }
 }
 
 mod repository {
+    pub mod novel_repository;
     pub mod user_account_repository;
 }
 
@@ -43,10 +45,14 @@ mod service {
     pub mod common {
         pub mod data_time_service;
     }
+    pub mod novel {
+        pub mod novel_service;
+    }
 }
 
 // DB接続のプール取得
 async fn create_database_connection(
+    secret: SecretStore,
     database_url: &str,
 ) -> Result<DatabaseConnection, sea_orm::DbErr> {
     let mut opt = sea_orm::ConnectOptions::new(database_url.to_owned());
@@ -55,7 +61,8 @@ async fn create_database_connection(
         .connect_timeout(std::time::Duration::from_secs(20))
         .acquire_timeout(std::time::Duration::from_secs(20))
         .idle_timeout(std::time::Duration::from_secs(20))
-        .max_lifetime(std::time::Duration::from_secs(20));
+        .max_lifetime(std::time::Duration::from_secs(20))
+        .sqlx_logging(secret.get("SQL_DEBUG") == Some("true".to_string()));
 
     Database::connect(opt).await
 }
@@ -78,7 +85,7 @@ async fn graphql_handler(
 async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> shuttle_axum::ShuttleAxum {
     // DB接続の取得
     let db_connect = if let Some(db_connect_str) = secret_store.get("DB_CONNECT") {
-        create_database_connection(&db_connect_str)
+        create_database_connection(secret_store.clone(), &db_connect_str)
             .await
             .map_err(|error| Error::Database(error.to_string()))?
     } else {
