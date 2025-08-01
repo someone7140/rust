@@ -20,7 +20,6 @@ impl RoleGuard {
 
 impl Guard for RoleGuard {
     async fn check(&self, ctx: &Context<'_>) -> Result<()> {
-        // Roleの使い分けは適当に・・
         if Some(&self.role) == Some(&Role::Anonymous) {
             Ok(())
         } else if let Some(_) = ctx.data_opt::<AuthContext>() {

@@ -1,8 +1,10 @@
 use async_graphql::{EmptySubscription, Schema};
 use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
-use axum::{extract::State, middleware, routing::post, Extension, Router};
+use axum::{extract::State, http, middleware, routing::post, Extension, Router};
+use reqwest::Method;
 use sea_orm::{Database, DatabaseConnection};
 use shuttle_runtime::{Error, SecretStore};
+use tower_http::cors::CorsLayer;
 
 use crate::{
     controller::{graphql_mutation::MutationRoot, graphql_query::QueryRoot},
@@ -98,12 +100,38 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> shuttle_
         db_connect: db_connect,
     };
 
+    // CORS設定
+    let cors = CorsLayer::new()
+        .allow_origin([secret_store
+            .get("FRONT_DOMAIN")
+            .unwrap()
+            .parse::<http::HeaderValue>()
+            .unwrap()])
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::OPTIONS,
+            Method::PUT,
+            Method::PATCH,
+            Method::DELETE,
+        ])
+        .allow_headers([
+            http::header::AUTHORIZATION,
+            http::header::CONTENT_TYPE,
+            http::header::ACCEPT,
+            http::HeaderName::from_static("apollo-require-preflight"),
+            http::HeaderName::from_static("x-apollo-operation-name"),
+        ])
+        .allow_credentials(true);
+
     let app = Router::new()
         .route("/graphql", post(graphql_handler))
         .layer(middleware::from_fn_with_state(
             context_state.clone(),
             jwt_auth_middleware,
         ))
+        .layer(cors)
         .with_state(context_state);
+
     Ok(app.into())
 }
