@@ -27,7 +27,7 @@ impl QueryRoot {
 
     // ヘッダーから取得したユーザーIDでユーザ情報を取得
     #[graphql(guard = "RoleGuard::new(Role::User)")]
-    async fn get_user_account_from_auth_header_user_account_id(
+    async fn get_user_account_from_auth_header(
         &self,
         ctx: &Context<'_>,
     ) -> Result<graphql_user_account::UserAccountResponse> {
