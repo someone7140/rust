@@ -60,6 +60,7 @@ impl MigrationTrait for Migration {
                             .primary_key(),
                     )
                     .col(ColumnDef::new(novels::Column::Title).string().not_null())
+                    .col(ColumnDef::new(novels::Column::Description).string())
                     .col(
                         ColumnDef::new(novels::Column::OwnerUserAccountId)
                             .string()

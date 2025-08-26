@@ -4,4 +4,5 @@ use async_graphql::*;
 pub struct NovelResponse {
     pub id: String,
     pub title: String,
+    pub description: Option<String>,
 }

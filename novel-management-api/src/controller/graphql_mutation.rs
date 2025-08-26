@@ -70,11 +70,18 @@ impl MutationRoot {
         &self,
         ctx: &Context<'_>,
         #[graphql(validator(min_length = 1))] title: String,
+        description: Option<String>,
     ) -> Result<bool> {
         let context = &mut ctx.data_unchecked::<CommonContext>();
         let auth_context = &mut ctx.data_unchecked::<AuthContext>();
 
-        novel_service::add_novel(context, auth_context.clone().user_account_id, title).await
+        novel_service::add_novel(
+            context,
+            auth_context.clone().user_account_id,
+            title,
+            description,
+        )
+        .await
     }
 
     // 小説の編集
@@ -84,11 +91,19 @@ impl MutationRoot {
         ctx: &Context<'_>,
         #[graphql(validator(min_length = 1))] id: String,
         #[graphql(validator(min_length = 1))] title: String,
+        description: Option<String>,
     ) -> Result<bool> {
         let context = &mut ctx.data_unchecked::<CommonContext>();
         let auth_context = &mut ctx.data_unchecked::<AuthContext>();
 
-        novel_service::edit_novel(context, auth_context.clone().user_account_id, id, title).await
+        novel_service::edit_novel(
+            context,
+            auth_context.clone().user_account_id,
+            id,
+            title,
+            description,
+        )
+        .await
     }
 
     // 小説の削除

@@ -14,14 +14,16 @@ pub async fn register_novel(db: &DatabaseConnection, novel: novels::ActiveModel)
     }
 }
 
-// 小説を登録
+// 小説を編集
 pub async fn edit_novel(
     db: &DatabaseConnection,
     novel: novels::ActiveModel,
     title: String,
+    description: Option<String>,
 ) -> Option<DbErr> {
     let mut update_novel = novel;
     update_novel.title = Set(title);
+    update_novel.description = Set(description);
     let result = update_novel.update(db).await;
 
     match result {

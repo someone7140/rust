@@ -6,6 +6,7 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String,
     pub title: String,
+    pub description: Option<String>,
     pub owner_user_account_id: String,
     pub created_at: DateTimeWithTimeZone,
 }
