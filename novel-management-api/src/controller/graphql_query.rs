@@ -47,6 +47,20 @@ impl QueryRoot {
         novel_service::get_my_novels(context, auth_context.clone().user_account_id).await
     }
 
+    // キー指定で小説を取得
+    #[graphql(guard = "RoleGuard::new(Role::User)")]
+    async fn get_my_novel_by_id(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(validator(min_length = 1))] novel_id: String,
+    ) -> Result<graphql_novel::NovelResponse> {
+        let context = &mut ctx.data_unchecked::<CommonContext>();
+        let auth_context = &mut ctx.data_unchecked::<AuthContext>();
+
+        novel_service::get_novel_by_id(context, auth_context.clone().user_account_id, novel_id)
+            .await
+    }
+
     // 小説の設定一覧を取得
     #[graphql(guard = "RoleGuard::new(Role::User)")]
     async fn get_my_novel_settings(

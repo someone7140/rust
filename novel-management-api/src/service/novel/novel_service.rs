@@ -108,3 +108,27 @@ pub async fn get_my_novels(
         })
         .collect::<Vec<graphql_novel::NovelResponse>>())
 }
+
+// id指定で小説を取得
+pub async fn get_novel_by_id(
+    context: &mut &context_info::CommonContext,
+    user_account_id: String,
+    novel_id: String,
+) -> Result<graphql_novel::NovelResponse> {
+    let find_result = novel_repository::get_novel_by_id(
+        &context.db_connect,
+        user_account_id.clone(),
+        novel_id.clone(),
+    )
+    .await;
+    let novel = match find_result {
+        Some(novel) => novel,
+        None => return Err(AppError::NotFoundError("Can not find novel".to_string()).extend()),
+    };
+
+    Ok(graphql_novel::NovelResponse {
+        id: novel.id.clone(),
+        title: novel.title.clone(),
+        description: novel.description.clone(),
+    })
+}
