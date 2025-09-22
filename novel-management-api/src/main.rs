@@ -29,12 +29,14 @@ mod model {
         pub mod graphql_error;
         pub mod graphql_guard;
         pub mod graphql_novel;
+        pub mod graphql_novel_setting;
         pub mod graphql_user_account;
     }
 }
 
 mod repository {
     pub mod novel_repository;
+    pub mod novel_setting_repository;
     pub mod user_account_repository;
 }
 
@@ -49,6 +51,7 @@ mod service {
     }
     pub mod novel {
         pub mod novel_service;
+        pub mod novel_setting_service;
     }
 }
 

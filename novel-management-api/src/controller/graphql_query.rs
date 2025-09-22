@@ -2,9 +2,9 @@ use async_graphql::*;
 
 use crate::model::common::context_info::{AuthContext, CommonContext};
 use crate::model::graphql::graphql_guard::{Role, RoleGuard};
-use crate::model::graphql::{graphql_novel, graphql_user_account};
+use crate::model::graphql::{graphql_novel, graphql_novel_setting, graphql_user_account};
 use crate::service::auth::{google_auth_service, user_account_service};
-use crate::service::novel::novel_service;
+use crate::service::novel::{novel_service, novel_setting_service};
 
 pub struct QueryRoot;
 
@@ -45,5 +45,41 @@ impl QueryRoot {
         let auth_context = &mut ctx.data_unchecked::<AuthContext>();
 
         novel_service::get_my_novels(context, auth_context.clone().user_account_id).await
+    }
+
+    // 小説の設定一覧を取得
+    #[graphql(guard = "RoleGuard::new(Role::User)")]
+    async fn get_my_novel_settings(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(validator(min_length = 1))] novel_id: String,
+    ) -> Result<Vec<graphql_novel_setting::NovelSettingResponse>> {
+        let context = &mut ctx.data_unchecked::<CommonContext>();
+        let auth_context = &mut ctx.data_unchecked::<AuthContext>();
+
+        novel_setting_service::get_novel_settings(
+            context,
+            auth_context.clone().user_account_id,
+            novel_id,
+        )
+        .await
+    }
+
+    // 親設定をキーにした設定一覧を取得
+    #[graphql(guard = "RoleGuard::new(Role::User)")]
+    async fn get_novel_settings_by_parent_setting_id(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(validator(min_length = 1))] parent_setting_id: String,
+    ) -> Result<Vec<graphql_novel_setting::NovelSettingResponse>> {
+        let context = &mut ctx.data_unchecked::<CommonContext>();
+        let auth_context = &mut ctx.data_unchecked::<AuthContext>();
+
+        novel_setting_service::get_novel_settings_by_parent_setting_id(
+            context,
+            auth_context.clone().user_account_id,
+            parent_setting_id,
+        )
+        .await
     }
 }

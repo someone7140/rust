@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::model::common::context_info;
 use crate::model::graphql::graphql_error::AppError;
 use crate::model::graphql::graphql_novel;
-use crate::repository::novel_repository;
+use crate::repository::{novel_repository, novel_setting_repository};
 use crate::service::common::data_time_service;
 
 // 小説を追加
@@ -61,14 +61,30 @@ pub async fn delete_novel(
     user_account_id: String,
     novel_id: String,
 ) -> Result<bool> {
-    let find_result =
-        novel_repository::get_novel_by_id(&context.db_connect, user_account_id, novel_id).await;
-    let novel: novels::Model = match find_result {
+    let find_result = novel_repository::get_novel_by_id(
+        &context.db_connect,
+        user_account_id.clone(),
+        novel_id.clone(),
+    )
+    .await;
+    let novel = match find_result {
         Some(novel) => novel,
         None => return Ok(true),
     };
 
-    let delete_error = novel_repository::delete_novel(&context.db_connect, novel.into()).await;
+    // 設定を削除
+    if let Some(error) = novel_setting_repository::delete_settings_by_novel_id(
+        &context.db_connect,
+        user_account_id.clone(),
+        novel_id,
+    )
+    .await
+    {
+        return Err(async_graphql::Error::new(error.to_string()));
+    }
+
+    let delete_error =
+        novel_repository::delete_novel(&context.db_connect, novel.into(), user_account_id).await;
     if delete_error.is_some() {
         return Err(AppError::SystemError(delete_error.unwrap().to_string()).extend());
     }
