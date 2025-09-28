@@ -125,7 +125,9 @@ impl MutationRoot {
     async fn register_novel_settings(
         &self,
         ctx: &Context<'_>,
-        inputs: Vec<graphql_novel_setting::NovelSettingRegisterInput>,
+        #[graphql(validator(min_items = 1))] inputs: Vec<
+            graphql_novel_setting::NovelSettingRegisterInput,
+        >,
     ) -> Result<bool> {
         let context = &mut ctx.data_unchecked::<CommonContext>();
         let auth_context = &mut ctx.data_unchecked::<AuthContext>();
