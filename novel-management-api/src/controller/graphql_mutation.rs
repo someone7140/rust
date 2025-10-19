@@ -142,7 +142,7 @@ impl MutationRoot {
 
     // 小説設定の削除
     #[graphql(guard = "RoleGuard::new(Role::User)")]
-    async fn delete_novel_settings_by_id(
+    async fn delete_novel_setting_by_id(
         &self,
         ctx: &Context<'_>,
         #[graphql(validator(min_length = 1))] setting_id: String,
@@ -150,7 +150,7 @@ impl MutationRoot {
         let context = &mut ctx.data_unchecked::<CommonContext>();
         let auth_context = &mut ctx.data_unchecked::<AuthContext>();
 
-        novel_setting_service::delete_novel_settings_by_id(
+        novel_setting_service::delete_novel_setting_by_id(
             context,
             auth_context.clone().user_account_id,
             setting_id,
@@ -160,7 +160,7 @@ impl MutationRoot {
 
     // 小説設定の削除（複数指定）
     #[graphql(guard = "RoleGuard::new(Role::User)")]
-    async fn delete_novel_settings_by_ids(
+    async fn delete_novel_setting_by_ids(
         &self,
         ctx: &Context<'_>,
         #[graphql(validator(min_items = 1))] setting_ids: Vec<String>,
@@ -168,7 +168,7 @@ impl MutationRoot {
         let context = &mut ctx.data_unchecked::<CommonContext>();
         let auth_context = &mut ctx.data_unchecked::<AuthContext>();
 
-        novel_setting_service::delete_novel_settings_by_ids(
+        novel_setting_service::delete_novel_setting_by_ids(
             context,
             auth_context.clone().user_account_id,
             setting_ids,

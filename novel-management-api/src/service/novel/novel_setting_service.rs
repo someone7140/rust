@@ -118,7 +118,7 @@ pub async fn register_novel_settings(
 }
 
 // 設定のIDを指定キーで削除
-pub async fn delete_novel_settings_by_id(
+pub async fn delete_novel_setting_by_id(
     context: &mut &context_info::CommonContext,
     user_account_id: String,
     setting_id: String,
@@ -158,7 +158,7 @@ pub async fn delete_novel_settings_by_id(
 }
 
 // 設定のIDを複数指定キーで削除
-pub async fn delete_novel_settings_by_ids(
+pub async fn delete_novel_setting_by_ids(
     context: &mut &context_info::CommonContext,
     user_account_id: String,
     setting_ids: Vec<String>,
