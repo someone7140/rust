@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug data_import_batch",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/target/debug/government-program-analytics-data-import-batch",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "build data_import_batch"
+    }
+  ]
+}

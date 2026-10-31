@@ -1,0 +1,11 @@
+
+[package]
+name = "entity"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.98"
+publish = false
+ 
+[dependencies]
+toasty = { version = "0.11.0", features = ["postgresql"] }
+uuid = { version = "1", features = ["v7", "serde"] }

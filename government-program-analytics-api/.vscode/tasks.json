@@ -1,0 +1,16 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build data_import_batch",
+      "type": "process",
+      "command": "cargo",
+      "args": [
+        "build",
+        "--package",
+        "government-program-analytics-data-import-batch"
+      ],
+      "problemMatcher": ["$rustc"]
+    }
+  ]
+}

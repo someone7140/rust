@@ -1,0 +1,16 @@
+
+[package]
+name = "government-program-analytics-data-import-batch"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.98"
+publish = false
+ 
+[dependencies]
+dotenvy = "0.15"
+toasty = { version = "0.11.0", features = ["postgresql"] }
+tokio = { version = "1.53.2", features = ["full"] }
+csv = "1.4"
+serde = { version = "1", features = ["derive"] }
+
+entity = { path = "../entity" }

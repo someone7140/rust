@@ -1,0 +1,2 @@
+- `cargo run -p government-program-analytics-db-migration migration generate`でmigrationをgenerate、`cargo run -p government-program-analytics-db-migration migration apply`でmigrationをapply。
+- `cargo run -p government-program-analytics-data-import-batch`で、CSVのファイルを取り込み。
