@@ -122,8 +122,48 @@ pub struct BasicInfo15RelationProject {
     pub project_id: i64,
 
     #[serde(rename = "関連事業の事業ID")]
-    pub relation_project_id: i64,
+    pub relation_project_id: Option<i64>,
 
     #[serde(rename = "関連性")]
-    pub relationship: String,
+    pub relationship: Option<String>,
+}
+
+// 2-1_予算・執行_サマリ
+#[derive(Debug, Deserialize)]
+pub struct Budget21Summary {
+    #[serde(rename = "予算事業ID")]
+    pub project_id: i64,
+
+    #[serde(rename = "予算年度")]
+    pub budget_year: i32,
+
+    #[serde(rename = "当初予算（合計）")]
+    pub initial_budget: Option<f64>,
+
+    #[serde(rename = "補正予算（合計）")]
+    pub supplementary_budget: Option<f64>,
+
+    #[serde(rename = "前年度からの繰越し（合計）")]
+    pub carried_over_budget: Option<f64>,
+
+    #[serde(rename = "予備費等（合計）")]
+    pub contingency_budget: Option<f64>,
+
+    #[serde(rename = "計（歳出予算現額合計）")]
+    pub summary_budget: Option<f64>,
+
+    #[serde(rename = "執行額（合計）")]
+    pub executuon_budget: Option<f64>,
+
+    #[serde(rename = "執行率")]
+    pub executuon_rate: Option<f64>,
+
+    #[serde(rename = "翌年度への繰越し(合計）")]
+    pub carried_forward_budget: Option<f64>,
+
+    #[serde(rename = "翌年度要求額（合計）")]
+    pub request_budget: Option<f64>,
+
+    #[serde(rename = "主な増減理由")]
+    pub reason_for_change: Option<String>,
 }

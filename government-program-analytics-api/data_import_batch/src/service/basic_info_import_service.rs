@@ -3,7 +3,7 @@ use crate::{
         BasicInfo11Organization, BasicInfo12Overview, BasicInfo13Policy, BasicInfo14Subsidy,
         BasicInfo15RelationProject,
     },
-    util::csv_util,
+    util::{csv_util, db_util::batch_insert},
 };
 use entity::db_model::{
     Agency, Department, Law, Ministry, Office, PersonInCharge, Project, RelationProject, Section,
@@ -27,41 +27,39 @@ pub async fn import_basic_info(db: &mut Db) -> Result<(), Box<dyn Error>> {
     import_basicinfo15_relation_project(db).await?;
 
     // projectの登録
-    let mut create_projects = Project::create_many();
-    for project in basic_info_map.values() {
-        create_projects = create_projects.with_item(|item| {
-            item.project_id(project.project_id)
-                .project_name(project.project_name.clone())
-                .responsible_ministry_id(project.responsible_ministry_id)
-                .ministry_id(project.ministry_id)
-                .agency_id(project.agency_id)
-                .department_id(project.department_id)
-                .section_name(project.section_name)
-                .office_name(project.office_name)
-                .person_in_charge_id(project.person_in_charge_id)
-                .project_purpose(project.project_purpose.clone())
-                .project_situation(project.project_situation.clone())
-                .project_overview(project.project_overview.clone())
-                .overview_url(project.overview_url.clone())
-                .start_year(project.start_year)
-                .end_year(project.end_year)
-                .policy(project.policy.clone())
-                .policy_measure(project.policy_measure.clone())
-                .policy_url(project.policy_url.clone())
-                .law_id(project.law_id.clone())
-                .law_article(project.law_article.clone())
-                .law_paragraph(project.law_paragraph.clone())
-                .law_item(project.law_item.clone())
-                .plan_notification_name(project.plan_notification_name.clone())
-                .plan_notification_url(project.plan_notification_url.clone())
-                .subsidy_target(project.subsidy_target.clone())
-                .subsidy_rate(project.subsidy_rate.clone())
-                .subsidy_limit(project.subsidy_limit.clone())
-                .subsidy_url(project.subsidy_url.clone())
-        });
-    }
     Query::<List<Project>>::all().delete().exec(db).await?;
-    create_projects.exec(db).await?;
+    let projects: Vec<&Project> = basic_info_map.values().collect();
+    batch_insert::<Project, _, _>(db, &projects, Project::create_many, |project, item| {
+        item.project_id(project.project_id)
+            .project_name(project.project_name.clone())
+            .responsible_ministry_id(project.responsible_ministry_id)
+            .ministry_id(project.ministry_id)
+            .agency_id(project.agency_id)
+            .department_id(project.department_id)
+            .section_name(project.section_name)
+            .office_name(project.office_name)
+            .person_in_charge_id(project.person_in_charge_id)
+            .project_purpose(project.project_purpose.clone())
+            .project_situation(project.project_situation.clone())
+            .project_overview(project.project_overview.clone())
+            .overview_url(project.overview_url.clone())
+            .start_year(project.start_year)
+            .end_year(project.end_year)
+            .policy(project.policy.clone())
+            .policy_measure(project.policy_measure.clone())
+            .policy_url(project.policy_url.clone())
+            .law_id(project.law_id.clone())
+            .law_article(project.law_article.clone())
+            .law_paragraph(project.law_paragraph.clone())
+            .law_item(project.law_item.clone())
+            .plan_notification_name(project.plan_notification_name.clone())
+            .plan_notification_url(project.plan_notification_url.clone())
+            .subsidy_target(project.subsidy_target.clone())
+            .subsidy_rate(project.subsidy_rate.clone())
+            .subsidy_limit(project.subsidy_limit.clone())
+            .subsidy_url(project.subsidy_url.clone())
+    })
+    .await?;
 
     Ok(())
 }
@@ -81,37 +79,37 @@ pub async fn import_basicinfo11_organization(
     let mut ministry_id_counter: i64 = 1; // 府省庁IDの割り振りカウンター
     let mut ministry_name_set = HashSet::<String>::new(); // 登録済みの府省庁名を保持
     let mut ministry_name_id_map = HashMap::<String, i64>::new(); // 名前からidを取得する用途
-    let mut ministry_create_many_query = Ministry::create_many();
+    let mut ministries: Vec<(i64, String)> = Vec::new();
 
     // 局・庁
     let mut agency_id_counter: i64 = 1; // 局・庁IDの割り振りカウンター
     let mut agency_name_set = HashSet::<String>::new(); // 登録済みの局・庁名を保持
     let mut agency_name_id_map = HashMap::<String, i64>::new(); // 局・庁名からIDを取得する用途
-    let mut agency_create_many_query = Agency::create_many();
+    let mut agencies: Vec<(i64, String)> = Vec::new();
 
     // 部
     let mut department_id_counter: i64 = 1; // 部IDの割り振りカウンター
     let mut department_name_set = HashSet::<String>::new(); // 登録済みの部名を保持
     let mut department_name_id_map = HashMap::<String, i64>::new(); // 部名からIDを取得する用途
-    let mut department_create_many_query = Department::create_many();
+    let mut departments: Vec<(i64, String)> = Vec::new();
 
     // 課
     let mut section_id_counter: i64 = 1; // 課IDの割り振りカウンター
     let mut section_name_set = HashSet::<String>::new(); // 登録済みの課名を保持
     let mut section_name_id_map = HashMap::<String, i64>::new(); // 課名からIDを取得する用途
-    let mut section_create_many_query = Section::create_many();
+    let mut sections: Vec<(i64, String)> = Vec::new();
 
     // 室
     let mut office_id_counter: i64 = 1; // 室IDの割り振りカウンター
     let mut office_name_set = HashSet::<String>::new(); // 登録済みの室名を保持
     let mut office_name_id_map = HashMap::<String, i64>::new(); // 室名からIDを取得する用途
-    let mut office_create_many_query = Office::create_many();
+    let mut offices: Vec<(i64, String)> = Vec::new();
 
     // 担当者用の変数
     let mut person_in_charge_id_counter: i64 = 1; // 担当者IDの割り振りカウンター
     let mut person_in_charge_name_set = HashSet::<String>::new(); // 登録済みの担当者名を保持
     let mut person_in_charge_name_id_map = HashMap::<String, i64>::new(); // 担当者名からIDを取得する用途
-    let mut person_in_charge_create_many_query = PersonInCharge::create_many();
+    let mut people_in_charge: Vec<(i64, String)> = Vec::new();
 
     let mut intermediate_data = HashMap::with_capacity(organization_rows.len());
 
@@ -120,10 +118,7 @@ pub async fn import_basicinfo11_organization(
         if !org_val.ministry_name.clone().is_empty()
             && ministry_name_set.insert(org_val.ministry_name.clone())
         {
-            ministry_create_many_query = ministry_create_many_query.with_item(|m| {
-                m.id(ministry_id_counter)
-                    .name(org_val.ministry_name.clone())
-            });
+            ministries.push((ministry_id_counter, org_val.ministry_name.clone()));
             ministry_name_id_map.insert(org_val.ministry_name.clone(), ministry_id_counter);
             ministry_id_counter += 1;
         }
@@ -131,8 +126,7 @@ pub async fn import_basicinfo11_organization(
         // 局・庁が新しく登場したら登録対象とする
         if let Some(name) = &org_val.agency_name {
             if !name.is_empty() && agency_name_set.insert(name.clone()) {
-                agency_create_many_query =
-                    agency_create_many_query.with_item(|a| a.id(agency_id_counter).name(name));
+                agencies.push((agency_id_counter, name.clone()));
                 agency_name_id_map.insert(name.clone(), agency_id_counter);
                 agency_id_counter += 1;
             }
@@ -141,8 +135,7 @@ pub async fn import_basicinfo11_organization(
         // 部が新しく登場したら登録対象とする
         if let Some(name) = &org_val.department_name {
             if !name.is_empty() && department_name_set.insert(name.clone()) {
-                department_create_many_query = department_create_many_query
-                    .with_item(|d| d.id(department_id_counter).name(name));
+                departments.push((department_id_counter, name.clone()));
                 department_name_id_map.insert(name.clone(), department_id_counter);
                 department_id_counter += 1;
             }
@@ -151,8 +144,7 @@ pub async fn import_basicinfo11_organization(
         // 課が新しく登場したら登録対象とする
         if let Some(name) = &org_val.section_name {
             if !name.is_empty() && section_name_set.insert(name.clone()) {
-                section_create_many_query =
-                    section_create_many_query.with_item(|s| s.id(section_id_counter).name(name));
+                sections.push((section_id_counter, name.clone()));
                 section_name_id_map.insert(name.clone(), section_id_counter);
                 section_id_counter += 1;
             }
@@ -161,8 +153,7 @@ pub async fn import_basicinfo11_organization(
         // 室が新しく登場したら登録対象とする
         if let Some(name) = &org_val.office_name {
             if !name.is_empty() && office_name_set.insert(name.clone()) {
-                office_create_many_query =
-                    office_create_many_query.with_item(|o| o.id(office_id_counter).name(name));
+                offices.push((office_id_counter, name.clone()));
                 office_name_id_map.insert(name.clone(), office_id_counter);
                 office_id_counter += 1;
             }
@@ -171,8 +162,7 @@ pub async fn import_basicinfo11_organization(
         // 担当者が新しく登場したら登録対象とする
         if let Some(name) = &org_val.person_in_charge_name {
             if !name.is_empty() && person_in_charge_name_set.insert(name.clone()) {
-                person_in_charge_create_many_query = person_in_charge_create_many_query
-                    .with_item(|p| p.id(person_in_charge_id_counter).name(name));
+                people_in_charge.push((person_in_charge_id_counter, name.clone()));
                 person_in_charge_name_id_map.insert(name.clone(), person_in_charge_id_counter);
                 person_in_charge_id_counter += 1;
             }
@@ -262,12 +252,36 @@ pub async fn import_basicinfo11_organization(
         .await?;
 
     // 登録
-    ministry_create_many_query.exec(db).await?;
-    agency_create_many_query.exec(db).await?;
-    department_create_many_query.exec(db).await?;
-    section_create_many_query.exec(db).await?;
-    office_create_many_query.exec(db).await?;
-    person_in_charge_create_many_query.exec(db).await?;
+    batch_insert::<Ministry, _, _>(db, &ministries, Ministry::create_many, |(id, name), m| {
+        m.id(*id).name(name.clone())
+    })
+    .await?;
+    batch_insert::<Agency, _, _>(db, &agencies, Agency::create_many, |(id, name), a| {
+        a.id(*id).name(name.clone())
+    })
+    .await?;
+    batch_insert::<Department, _, _>(
+        db,
+        &departments,
+        Department::create_many,
+        |(id, name), d| d.id(*id).name(name.clone()),
+    )
+    .await?;
+    batch_insert::<Section, _, _>(db, &sections, Section::create_many, |(id, name), s| {
+        s.id(*id).name(name.clone())
+    })
+    .await?;
+    batch_insert::<Office, _, _>(db, &offices, Office::create_many, |(id, name), o| {
+        o.id(*id).name(name.clone())
+    })
+    .await?;
+    batch_insert::<PersonInCharge, _, _>(
+        db,
+        &people_in_charge,
+        PersonInCharge::create_many,
+        |(id, name), p| p.id(*id).name(name.clone()),
+    )
+    .await?;
 
     Ok(intermediate_data)
 }
@@ -304,7 +318,7 @@ pub async fn import_basicinfo13_policy(
     let policy_rows = policy_itr.collect::<Result<Vec<_>, _>>()?;
 
     let mut law_id_set = HashSet::<String>::new();
-    let mut create_laws = Law::create_many();
+    let mut laws: Vec<(String, String, String)> = Vec::new();
     for row in policy_rows {
         if let Some(intermediate_data) = basic_info_map.get_mut(&row.project_id) {
             intermediate_data.policy = row.policy;
@@ -324,13 +338,18 @@ pub async fn import_basicinfo13_policy(
                 && !number.is_empty()
                 && law_id_set.insert(id.clone())
             {
-                create_laws = create_laws.with_item(|law| law.id(id).name(name).law_number(number));
+                laws.push((id, name, number));
             }
         }
     }
 
     Query::<List<Law>>::all().delete().exec(db).await?;
-    create_laws.exec(db).await?;
+    batch_insert::<Law, _, _>(db, &laws, Law::create_many, |(id, name, number), law| {
+        law.id(id.clone())
+            .name(name.clone())
+            .law_number(number.clone())
+    })
+    .await?;
 
     Ok(())
 }
@@ -363,14 +382,15 @@ pub async fn import_basicinfo15_relation_project(db: &mut Db) -> Result<(), Box<
     let relation_project_rows = relation_project_itr.collect::<Result<Vec<_>, _>>()?;
 
     let mut relation_project_set = HashSet::<(i64, i64)>::new();
-    let mut create_relation_projects = RelationProject::create_many();
+    let mut relation_projects: Vec<(i64, i64, String)> = Vec::new();
     for row in relation_project_rows {
-        if relation_project_set.insert((row.project_id, row.relation_project_id)) {
-            create_relation_projects = create_relation_projects.with_item(|item| {
-                item.project_id(row.project_id)
-                    .relation_project_id(row.relation_project_id)
-                    .relationship(row.relationship)
-            });
+        // 関連プロジェクトが登録されている行のみが登録対象
+        if let (Some(relation_project_id), Some(relationship)) =
+            (row.relation_project_id, row.relationship)
+        {
+            if relation_project_set.insert((row.project_id, relation_project_id)) {
+                relation_projects.push((row.project_id, relation_project_id, relationship));
+            }
         }
     }
 
@@ -378,7 +398,17 @@ pub async fn import_basicinfo15_relation_project(db: &mut Db) -> Result<(), Box<
         .delete()
         .exec(db)
         .await?;
-    create_relation_projects.exec(db).await?;
+    batch_insert::<RelationProject, _, _>(
+        db,
+        &relation_projects,
+        RelationProject::create_many,
+        |(project_id, relation_project_id, relationship), item| {
+            item.project_id(*project_id)
+                .relation_project_id(*relation_project_id)
+                .relationship(relationship.clone())
+        },
+    )
+    .await?;
 
     Ok(())
 }

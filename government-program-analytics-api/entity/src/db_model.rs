@@ -104,3 +104,22 @@ pub struct RelationProject {
     pub relation_project_id: i64,
     pub relationship: String,
 }
+
+// 予算サマリー
+#[derive(Debug, toasty::Model)]
+pub struct BudgetSummary {
+    #[key]
+    pub project_id: i64,
+    #[key]
+    pub budget_year: i32,
+    pub initial_budget: i64,
+    pub supplementary_budget: i64,
+    pub carried_over_budget: i64,
+    pub contingency_budget: i64,
+    pub summary_budget: i64,
+    pub executuon_budget: i64,
+    pub executuon_rate: Option<f64>,
+    pub carried_forward_budget: i64,
+    pub request_budget: i64,
+    pub reason_for_change: Option<String>,
+}
